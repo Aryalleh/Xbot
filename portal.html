@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CrabVPN — پورتال شخصی</title>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+:root{--bg:#06080e;--s1:#0c0f18;--s2:#12172240;--bd:#1a2035;--acc:#38bdf8;--ac2:#818cf8;--grn:#34d399;--red:#f87171;--ylw:#fbbf24;--txt:#e2e8f0;--mut:#64748b;--f:'Vazirmatn',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:var(--f);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(56,189,248,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(56,189,248,.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+.wrap{position:relative;z-index:1;max-width:720px;margin:0 auto;padding:32px 20px}
+.top{text-align:center;margin-bottom:40px}
+.crab{font-size:52px;display:block;margin-bottom:12px;filter:drop-shadow(0 0 20px #38bdf855);animation:fl 4s ease-in-out infinite}
+@keyframes fl{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-8px) rotate(3deg)}}
+.title{font-size:28px;font-weight:700;background:linear-gradient(135deg,var(--acc),var(--ac2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
+.sub-name{font-size:16px;color:var(--mut);margin-bottom:4px}
+.sub-phone{font-size:13px;color:var(--bd);background:var(--s1);border:1px solid var(--bd);border-radius:8px;padding:4px 12px;display:inline-block}
+.section-title{font-size:13px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:.8px;margin:32px 0 14px}
+.sub-card{background:linear-gradient(135deg,var(--s1) 0%,#0d1220 100%);border:1px solid var(--bd);border-radius:16px;padding:22px;margin-bottom:14px;position:relative;overflow:hidden;transition:border-color .3s,transform .2s}
+.sub-card:hover{border-color:#1e2d4a;transform:translateY(-2px)}
+.sub-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--acc),var(--ac2))}
+.srv-hd{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.srv-flag{font-size:28px;line-height:1}
+.srv-info{flex:1}
+.srv-name{font-size:16px;font-weight:700;margin-bottom:2px}
+.srv-loc{font-size:12px;color:var(--mut)}
+.pkg-badge{background:linear-gradient(135deg,#38bdf820,#818cf820);border:1px solid #38bdf830;color:var(--acc);border-radius:20px;padding:3px 12px;font-size:12px;font-weight:600}
+.tbar-wrap{margin-bottom:16px}
+.tbar-labels{display:flex;justify-content:space-between;font-size:12px;color:var(--mut);margin-bottom:6px}
+.tbar-bg{height:8px;background:#1a2035;border-radius:4px;overflow:hidden}
+.tbar-fill{height:100%;border-radius:4px;transition:width .8s ease;background:linear-gradient(90deg,var(--grn),var(--acc))}
+.tbar-fill.warn{background:linear-gradient(90deg,var(--ylw),#f97316)}
+.tbar-fill.danger{background:linear-gradient(90deg,var(--red),#dc2626)}
+.tbar-pct{font-size:12px;color:var(--mut);margin-top:4px;text-align:left}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+.info-item{background:var(--bd)30;border:1px solid var(--bd);border-radius:10px;padding:10px 13px}
+.info-lbl{font-size:11px;color:var(--mut);margin-bottom:3px}
+.info-val{font-size:14px;font-weight:600}
+.cfg-wrap{background:#00000040;border:1px solid var(--bd);border-radius:10px;padding:12px 14px;margin-top:10px}
+.cfg-lbl{font-size:11px;color:var(--mut);margin-bottom:6px}
+.cfg-box{font-family:monospace;font-size:11px;word-break:break-all;color:#94a3b8;line-height:1.5;background:transparent;border:none;width:100%;outline:none;resize:none;direction:ltr;cursor:pointer}
+.copy-btn{display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:6px;border:1px solid var(--bd);background:transparent;color:var(--acc);font-family:var(--f);font-size:12px;cursor:pointer;margin-top:6px;transition:all .2s}
+.copy-btn:hover{background:#38bdf815;border-color:#38bdf840}
+.copy-btn.copied{color:var(--grn);border-color:#34d39940}
+/* add-traffic button */
+.add-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:14px;padding:10px;border-radius:10px;border:1px solid #38bdf840;background:linear-gradient(135deg,#38bdf810,#818cf810);color:var(--acc);font-family:var(--f);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s}
+.add-btn:hover{background:linear-gradient(135deg,#38bdf825,#818cf825);border-color:#38bdf870;transform:translateY(-1px)}
+/* renew blocked notice */
+.renew-blocked{margin-top:14px;padding:11px 14px;border-radius:10px;border:1px solid #fbbf2430;background:#fbbf2408;display:flex;align-items:flex-start;gap:8px;font-size:12px;color:#fbbf24;line-height:1.5}
+/* empty/loading/error */
+.empty-box{text-align:center;padding:60px 20px;color:var(--mut)}
+.empty-ico{font-size:52px;margin-bottom:16px}
+.empty-txt{font-size:16px;margin-bottom:8px}
+.empty-sub{font-size:13px}
+.loading{text-align:center;padding:80px 20px}
+.spin{width:36px;height:36px;border:3px solid var(--bd);border-top-color:var(--acc);border-radius:50%;animation:sp .8s linear infinite;margin:0 auto 16px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.err-box{text-align:center;padding:80px 20px;color:var(--red)}
+.footer{text-align:center;margin-top:48px;padding-top:24px;border-top:1px solid var(--bd);color:var(--mut);font-size:12px}
+/* ── Modals ───────────────────────────────────────────────────────────────── */
+.modal-overlay{position:fixed;inset:0;background:#00000090;backdrop-filter:blur(4px);z-index:100;display:flex;align-items:center;justify-content:center;padding:20px}
+.modal-box{background:linear-gradient(135deg,#0d1220,#0c0f18);border:1px solid var(--bd);border-radius:20px;padding:28px 24px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto;position:relative}
+.modal-hd{font-size:18px;font-weight:700;margin-bottom:20px;text-align:center}
+.modal-close-x{position:absolute;top:16px;left:16px;background:transparent;border:none;color:var(--mut);font-size:20px;cursor:pointer;line-height:1;padding:4px 8px;border-radius:6px;transition:color .2s}
+.modal-close-x:hover{color:var(--txt)}
+/* package list */
+.pkg-item{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border:1px solid var(--bd);border-radius:12px;margin-bottom:8px;cursor:pointer;transition:all .2s;background:#ffffff05}
+.pkg-item:hover{border-color:#38bdf860;background:#38bdf810}
+.pkg-item-name{font-size:15px;font-weight:600}
+.pkg-item-info{font-size:12px;color:var(--mut);margin-top:3px}
+.pkg-item-price{font-size:14px;font-weight:700;color:var(--acc);text-align:left;white-space:nowrap}
+/* payment modal */
+.pay-timer{text-align:center;font-size:36px;font-weight:700;letter-spacing:4px;color:var(--acc);margin-bottom:6px;font-family:monospace}
+.pay-timer.warn{color:var(--ylw)}
+.pay-timer.danger{color:var(--red)}
+.pay-expire-lbl{text-align:center;font-size:12px;color:var(--mut);margin-bottom:20px}
+.pay-method-tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
+.pay-tab{flex:1;min-width:80px;padding:8px 4px;border:1px solid var(--bd);border-radius:8px;background:transparent;color:var(--mut);font-family:var(--f);font-size:12px;cursor:pointer;text-align:center;transition:all .2s}
+.pay-tab.active{border-color:#38bdf870;color:var(--acc);background:#38bdf810}
+.pay-section{display:none}
+.pay-section.visible{display:block}
+/* copy field */
+.copy-field-wrap{background:#00000050;border:1px solid var(--bd);border-radius:10px;padding:12px 14px;margin-bottom:10px}
+.copy-field-lbl{font-size:11px;color:var(--mut);margin-bottom:6px}
+.copy-field-val{font-size:18px;font-weight:700;color:var(--txt);direction:ltr;text-align:left;margin-bottom:4px;word-break:break-all}
+.copy-field-val.mono{font-family:monospace;font-size:14px;letter-spacing:2px}
+.copy-field-btn{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;border:1px solid var(--bd);background:transparent;color:var(--acc);font-family:var(--f);font-size:11px;cursor:pointer;transition:all .2s}
+.copy-field-btn:hover{background:#38bdf815}
+.copy-field-btn.copied{color:var(--grn)}
+/* amount note */
+.amount-note{font-size:11px;color:var(--ylw);background:#fbbf2410;border:1px solid #fbbf2430;border-radius:8px;padding:8px 12px;margin-top:8px}
+/* pay-status */
+.pay-status-area{text-align:center;padding:10px;font-size:13px;color:var(--mut);margin-top:8px}
+/* success overlay */
+.success-overlay{position:absolute;inset:0;background:#0c0f18ee;border-radius:20px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;z-index:10}
+.success-ico{font-size:64px;animation:pop .4s ease-out}
+@keyframes pop{0%{transform:scale(0)}80%{transform:scale(1.15)}100%{transform:scale(1)}}
+.success-txt{font-size:22px;font-weight:700;color:var(--grn)}
+.success-sub{font-size:13px;color:var(--mut)}
+/* donate section */
+.donate-link-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border-radius:12px;border:none;background:linear-gradient(135deg,#34d39920,#10b98120);border:1px solid #34d39940;color:var(--grn);font-family:var(--f);font-size:15px;font-weight:600;cursor:pointer;text-decoration:none;transition:all .2s;margin-bottom:10px}
+.donate-link-btn:hover{background:linear-gradient(135deg,#34d39935,#10b98135)}
+.tetra-link-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border-radius:12px;border:1px solid #818cf840;background:linear-gradient(135deg,#818cf820,#6366f120);color:var(--ac2);font-family:var(--f);font-size:15px;font-weight:600;cursor:pointer;text-decoration:none;transition:all .2s;margin-bottom:10px}
+.tetra-link-btn:hover{background:linear-gradient(135deg,#818cf835,#6366f135)}
+.method-note{font-size:12px;color:var(--mut);text-align:center;margin-top:6px}
+/* cancel button */
+.cancel-btn{width:100%;margin-top:14px;padding:10px;border-radius:10px;border:1px solid #f8717130;background:transparent;color:var(--red);font-family:var(--f);font-size:13px;cursor:pointer;transition:all .2s}
+.cancel-btn:hover{background:#f8717110}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <span class="crab">🦀</span>
+    <div class="title">CrabVPN</div>
+    <div class="sub-name">پورتال شخصی</div>
+  </div>
+  <div id="content">
+    <div class="loading">
+      <div class="spin"></div>
+      <div style="color:var(--mut);font-size:14px">در حال بارگذاری...</div>
+    </div>
+  </div>
+  <div class="footer">CrabVPN © — این لینک فقط مال شماست، به کسی ندهید.</div>
+</div>
+
+<!-- Package selection modal -->
+<div id="pkg-modal" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal('pkg-modal')">
+  <div class="modal-box">
+    <button class="modal-close-x" onclick="closeModal('pkg-modal')">✕</button>
+    <div class="modal-hd">📦 انتخاب پکیج</div>
+    <div id="pkg-list"><div class="loading"><div class="spin"></div></div></div>
+  </div>
+</div>
+
+<!-- Payment modal -->
+<div id="pay-modal" class="modal-overlay" style="display:none">
+  <div class="modal-box" style="position:relative">
+    <button class="modal-close-x" onclick="cancelPayment()">✕</button>
+    <div class="modal-hd">💳 پرداخت</div>
+    <div id="pay-timer" class="pay-timer">--:--</div>
+    <div class="pay-expire-lbl">زمان باقی‌مانده برای پرداخت</div>
+    <div id="pay-method-tabs" class="pay-method-tabs"></div>
+    <div id="pay-sections"></div>
+    <div id="pay-status" class="pay-status-area">⏳ در انتظار تأیید پرداخت...</div>
+    <button class="cancel-btn" onclick="cancelPayment()">انصراف از پرداخت</button>
+    <!-- success overlay (hidden by default) -->
+    <div id="success-overlay" class="success-overlay" style="display:none">
+      <div class="success-ico">✅</div>
+      <div class="success-txt">تایید شد!</div>
+      <div id="success-sub" class="success-sub">پرداخت شما با موفقیت تأیید شد.</div>
+      <div id="success-countdown" style="font-size:12px;color:var(--mut)"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const token = location.pathname.split('/').pop();
+let _pollTimer = null;
+let _countdownTimer = null;
+let _currentPayId = null;
+let _pkgOrderId = null;
+let _pkgServerId = null;
+let _activeMethods = {};
+let _activeTab = null;
+
+// ── Page load ──────────────────────────────────────────────────────────────
+
+async function load() {
+  try {
+    const r = await fetch(`/api/portal/${token}`);
+    const d = await r.json();
+    if (!d.ok) {
+      document.getElementById('content').innerHTML = `<div class="err-box"><div style="font-size:48px;margin-bottom:16px">🔒</div><div style="font-size:18px;margin-bottom:8px">لینک نامعتبر</div><div style="font-size:13px">این پورتال وجود ندارد یا منقضی شده</div></div>`;
+      return;
+    }
+    render(d);
+  } catch(e) {
+    document.getElementById('content').innerHTML = `<div class="err-box"><div style="font-size:48px;margin-bottom:16px">⚠️</div><div>خطای اتصال</div></div>`;
+  }
+}
+
+function fmb(mb) {
+  if (mb < 1024) return `${Math.round(mb).toLocaleString('fa-IR')} MB`;
+  return `${(mb/1024).toLocaleString('fa-IR',{minimumFractionDigits:2,maximumFractionDigits:2})} GB`;
+}
+
+function render(d) {
+  const c = d.customer;
+  const subs = d.subscriptions || [];
+
+  let html = `
+    <div style="text-align:center;margin-bottom:24px">
+      <div class="sub-name">خوش آمدی، <b>${c.name}</b></div>
+      <div class="sub-phone">${c.phone}</div>
+    </div>`;
+
+  if (!subs.length) {
+    html += `<div class="empty-box">
+      <div class="empty-ico">📭</div>
+      <div class="empty-txt">اشتراک فعالی نداری</div>
+      <div class="empty-sub">از بات تلگرام اشتراک بگیر</div>
+    </div>`;
+  } else {
+    html += `<div class="section-title">اشتراک‌های فعال (${subs.length})</div>`;
+    subs.forEach((s, i) => {
+      const pct = s.used_pct || 0;
+      const fillClass = pct > 85 ? 'danger' : pct > 60 ? 'warn' : '';
+      const expStr = s.expdate && s.expdate !== '—' ? s.expdate : 'بدون محدودیت';
+
+      let daysLeft = '—';
+      if (s.expdate && s.expdate !== '—') {
+        try {
+          const diff = Math.ceil((new Date(s.expdate) - new Date()) / 86400000);
+          daysLeft = diff >= 0 ? `${diff.toLocaleString('fa-IR')} روز` : '⛔ منقضی';
+        } catch(e) {}
+      }
+
+      const cfgHtml = d.config_hidden
+        ? `<div style="margin-top:12px;background:#1e2535;border:1px solid #252d3d;border-radius:8px;padding:14px;text-align:center;color:#64748b;font-size:13px">
+             🔒 کانفیگ مستقیماً از ادمین دریافت می‌شود
+           </div>`
+        : (s.config_text
+            ? `<div class="cfg-wrap">
+                 <div class="cfg-lbl">📲 کانفیگ (تپ برای کپی)</div>
+                 <textarea class="cfg-box" rows="2" readonly id="cfg-npv-${i}">${s.config_text}</textarea>
+                 <button class="copy-btn" id="cbtn-npv-${i}" onclick="copyEl('cfg-npv-${i}','cbtn-npv-${i}')">📋 کپی</button>
+               </div>`
+            : '') +
+          (s.config_netmod
+            ? `<div class="cfg-wrap" style="margin-top:8px">
+                 <div class="cfg-lbl">📲 کانفیگ Netmod (تپ برای کپی)</div>
+                 <textarea class="cfg-box" rows="1" readonly id="cfg-net-${i}">${s.config_netmod}</textarea>
+                 <button class="copy-btn" id="cbtn-net-${i}" onclick="copyEl('cfg-net-${i}','cbtn-net-${i}')">📋 کپی Netmod</button>
+                 <div id="qr-net-${i}" style="display:flex;justify-content:center;margin-top:12px;padding:10px;background:#fff;border-radius:8px"></div>
+               </div>`
+            : '');
+
+      // Extract server_id from sub data (added to API response)
+      const serverId = s.server_id || 0;
+
+      html += `<div class="sub-card">
+        <div class="srv-hd">
+          <span class="srv-flag">${s.server_flag}</span>
+          <div class="srv-info">
+            <div class="srv-name">${s.server_name}</div>
+            <div class="srv-loc">${s.server_location}</div>
+          </div>
+          <span class="pkg-badge">${s.pkg_name}</span>
+        </div>
+
+        <div class="tbar-wrap">
+          <div class="tbar-labels">
+            <span>باقی‌مانده: <b>${fmb(s.remaining_mb)}</b></span>
+            <span>کل: <b>${fmb(s.total_mb)}</b></span>
+          </div>
+          <div class="tbar-bg">
+            <div class="tbar-fill ${fillClass}" style="width:${pct}%"></div>
+          </div>
+          <div class="tbar-pct">${pct.toLocaleString('fa-IR')}٪ مصرف شده</div>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-lbl">⏳ زمان باقی‌مانده</div>
+            <div class="info-val">${daysLeft}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-lbl">📅 تاریخ انقضا</div>
+            <div class="info-val">${expStr}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-lbl">🕐 تاریخ خرید</div>
+            <div class="info-val" style="font-size:12px">${(s.created_at||'').slice(0,10)}</div>
+          </div>
+          <div class="info-item">
+            <div class="info-lbl">📊 مصرف</div>
+            <div class="info-val">${s.used_pct.toLocaleString('fa-IR')}٪</div>
+          </div>
+        </div>
+
+        ${cfgHtml}
+
+        ${s.can_renew !== false
+          ? `<button class="add-btn" onclick="openAddTraffic(${s.order_id}, ${serverId})">➕ افزودن حجم / تمدید</button>`
+          : `<div class="renew-blocked"><span>🔒</span><span>${s.renew_msg || 'تمدید هنوز ممکن نیست'}</span></div>`
+        }
+      </div>`;
+    });
+  }
+
+  document.getElementById('content').innerHTML = html;
+
+  // render QR codes
+  subs.forEach((s, i) => {
+    if (s.config_netmod) {
+      const el = document.getElementById(`qr-net-${i}`);
+      if (el && window.QRCode) {
+        new QRCode(el, {text: s.config_netmod, width: 180, height: 180,
+          colorDark: "#000", colorLight: "#fff", correctLevel: QRCode.CorrectLevel.M});
+      }
+    }
+  });
+}
+
+function copyEl(elId, btnId) {
+  const el  = document.getElementById(elId);
+  const btn = document.getElementById(btnId);
+  navigator.clipboard.writeText(el.value).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✅ کپی شد!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ── Package modal ──────────────────────────────────────────────────────────
+
+async function openAddTraffic(orderId, serverId) {
+  _pkgOrderId  = orderId;
+  _pkgServerId = serverId;
+  document.getElementById('pkg-list').innerHTML = '<div class="loading"><div class="spin"></div></div>';
+  document.getElementById('pkg-modal').style.display = 'flex';
+  try {
+    const r = await fetch(`/api/portal/${token}/packages/${serverId}`);
+    const d = await r.json();
+    if (!d.ok || !d.packages.length) {
+      document.getElementById('pkg-list').innerHTML = '<div style="text-align:center;color:var(--mut);padding:20px">پکیجی برای این سرور موجود نیست</div>';
+      return;
+    }
+    let html = '';
+    d.packages.forEach(p => {
+      const price = p.price_irr ? `${Number(p.price_irr).toLocaleString('fa')} تومان` : 'دستی';
+      const traffic = p.traffic_unit === 'gb' ? `${p.traffic_amount} GB` : `${p.traffic_amount} MB`;
+      html += `<div class="pkg-item" onclick="selectPackage(${p.id})">
+        <div>
+          <div class="pkg-item-name">${p.name}</div>
+          <div class="pkg-item-info">حجم: ${traffic}</div>
+        </div>
+        <div class="pkg-item-price">${price}</div>
+      </div>`;
+    });
+    document.getElementById('pkg-list').innerHTML = html;
+  } catch(e) {
+    document.getElementById('pkg-list').innerHTML = '<div style="text-align:center;color:var(--red);padding:20px">خطای اتصال</div>';
+  }
+}
+
+async function selectPackage(packageId) {
+  closeModal('pkg-modal');
+  document.getElementById('pay-modal').style.display = 'flex';
+  document.getElementById('pay-timer').textContent = '--:--';
+  document.getElementById('pay-timer').className = 'pay-timer';
+  document.getElementById('pay-method-tabs').innerHTML = '';
+  document.getElementById('pay-sections').innerHTML = '<div class="loading"><div class="spin"></div></div>';
+  document.getElementById('pay-status').textContent = '⏳ در حال آماده‌سازی...';
+  document.getElementById('success-overlay').style.display = 'none';
+
+  try {
+    const r = await fetch(`/api/portal/${token}/payment`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({order_id: _pkgOrderId, package_id: packageId}),
+    });
+    const d = await r.json();
+    if (!d.ok) {
+      document.getElementById('pay-sections').innerHTML = `<div style="text-align:center;color:var(--red);padding:20px">${d.error || 'خطا'}</div>`;
+      return;
+    }
+    _currentPayId  = d.payment_id;
+    _activeMethods = d.methods || {};
+    renderPaymentModal(d);
+    startCountdown(d.expires_at);
+    startPolling(d.payment_id);
+  } catch(e) {
+    document.getElementById('pay-sections').innerHTML = '<div style="text-align:center;color:var(--red);padding:20px">خطای اتصال</div>';
+  }
+}
+
+// ── Payment modal render ───────────────────────────────────────────────────
+
+function renderPaymentModal(d) {
+  const methods = Object.keys(d.methods || {});
+  const tabsEl  = document.getElementById('pay-method-tabs');
+  const secEl   = document.getElementById('pay-sections');
+
+  const labels = {card: '💳 کارت', donate: '🎁 دونیت', tetra: '⚡ آنلاین'};
+
+  // Build tabs (only if >1 method)
+  tabsEl.innerHTML = '';
+  if (methods.length > 1) {
+    methods.forEach(m => {
+      const btn = document.createElement('button');
+      btn.className = 'pay-tab';
+      btn.textContent = labels[m] || m;
+      btn.onclick = () => showTab(m);
+      btn.id = `tab-${m}`;
+      tabsEl.appendChild(btn);
+    });
+  }
+
+  // Build sections
+  let sectionsHtml = '';
+
+  if (d.methods.card) {
+    const c = d.methods.card;
+    const amountStr = c.sms_amount ? c.sms_amount.toLocaleString('fa') : '—';
+    sectionsHtml += `<div id="sec-card" class="pay-section">
+      <div class="copy-field-wrap">
+        <div class="copy-field-lbl">💳 شماره کارت</div>
+        <div class="copy-field-val mono" id="cf-card">${c.card_number || '—'}</div>
+        ${c.card_number ? `<button class="copy-field-btn" onclick="copyVal('cf-card',this)">📋 کپی</button>` : ''}
+      </div>
+      <div class="copy-field-wrap">
+        <div class="copy-field-lbl">👤 به نام</div>
+        <div class="copy-field-val" style="font-size:15px">${c.card_owner || '—'}</div>
+      </div>
+      <div class="copy-field-wrap">
+        <div class="copy-field-lbl">💰 مبلغ واریز (ریال)</div>
+        <div class="copy-field-val" id="cf-amount">${amountStr}</div>
+        <button class="copy-field-btn" onclick="copyVal('cf-amount',this)">📋 کپی</button>
+      </div>
+      <div class="amount-note">⚠️ این مبلغ دقیق را واریز کنید — هیچ تفاوتی قابل قبول نیست</div>
+    </div>`;
+  }
+
+  if (d.methods.donate) {
+    const don = d.methods.donate;
+    sectionsHtml += `<div id="sec-donate" class="pay-section">
+      <a class="donate-link-btn" href="${don.donation_url || '#'}" target="_blank">
+        🎁 پرداخت از طریق دونیت استریم
+      </a>
+      <div class="method-note">بعد از پرداخت، ادمین تأیید خواهد کرد</div>
+    </div>`;
+  }
+
+  if (d.methods.tetra) {
+    const t = d.methods.tetra;
+    const hasUrl = t.url && !t.error;
+    sectionsHtml += `<div id="sec-tetra" class="pay-section">
+      ${hasUrl
+        ? `<a class="tetra-link-btn" href="${t.url}" target="_blank">⚡ پرداخت آنلاین از طریق Tetra98</a>
+           <div class="method-note">بعد از پرداخت آنلاین به این صفحه برگردید</div>`
+        : `<div style="text-align:center;color:var(--red);padding:16px;font-size:13px">⚠️ درگاه آنلاین موقتاً در دسترس نیست</div>`
+      }
+    </div>`;
+  }
+
+  secEl.innerHTML = sectionsHtml;
+
+  // Show first tab
+  if (methods.length > 0) {
+    showTab(methods[0]);
+  }
+
+  document.getElementById('pay-status').textContent = '⏳ در انتظار تأیید پرداخت...';
+}
+
+function showTab(method) {
+  _activeTab = method;
+  document.querySelectorAll('.pay-section').forEach(el => el.classList.remove('visible'));
+  document.querySelectorAll('.pay-tab').forEach(el => el.classList.remove('active'));
+  const sec = document.getElementById(`sec-${method}`);
+  if (sec) sec.classList.add('visible');
+  const tab = document.getElementById(`tab-${method}`);
+  if (tab) tab.classList.add('active');
+}
+
+function copyVal(elId, btn) {
+  const el = document.getElementById(elId);
+  const val = el ? el.textContent.replace(/,/g, '').trim() : '';
+  navigator.clipboard.writeText(val).then(() => {
+    const orig = btn.textContent;
+    btn.textContent = '✅ کپی شد';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ── Countdown timer ────────────────────────────────────────────────────────
+
+function startCountdown(expiresAt) {
+  if (_countdownTimer) clearInterval(_countdownTimer);
+  const expMs = new Date(expiresAt + 'Z').getTime();
+  function tick() {
+    const rem = Math.max(0, Math.floor((expMs - Date.now()) / 1000));
+    const mm = String(Math.floor(rem / 60)).padStart(2, '0');
+    const ss = String(rem % 60).padStart(2, '0');
+    const el = document.getElementById('pay-timer');
+    if (!el) { clearInterval(_countdownTimer); return; }
+    el.textContent = `${mm}:${ss}`;
+    el.className = 'pay-timer' + (rem < 60 ? ' danger' : rem < 180 ? ' warn' : '');
+    if (rem <= 0) {
+      clearInterval(_countdownTimer);
+      document.getElementById('pay-status').textContent = '⛔ مهلت پرداخت منقضی شد.';
+    }
+  }
+  tick();
+  _countdownTimer = setInterval(tick, 1000);
+}
+
+// ── Status polling ─────────────────────────────────────────────────────────
+
+function startPolling(paymentId) {
+  if (_pollTimer) clearInterval(_pollTimer);
+  _pollTimer = setInterval(() => pollStatus(paymentId), 3000);
+}
+
+async function pollStatus(paymentId) {
+  try {
+    const r = await fetch(`/api/portal/${token}/payment/${paymentId}/status`);
+    const d = await r.json();
+    if (!d.ok) return;
+    if (d.status === 'approved') {
+      stopPolling();
+      showSuccess();
+    } else if (d.status === 'expired') {
+      stopPolling();
+      if (_countdownTimer) clearInterval(_countdownTimer);
+      document.getElementById('pay-status').textContent = '⛔ مهلت پرداخت منقضی شد.';
+    }
+  } catch(e) {}
+}
+
+function stopPolling() {
+  if (_pollTimer) { clearInterval(_pollTimer); _pollTimer = null; }
+}
+
+// ── Success state ──────────────────────────────────────────────────────────
+
+function showSuccess() {
+  if (_countdownTimer) { clearInterval(_countdownTimer); _countdownTimer = null; }
+  const overlay = document.getElementById('success-overlay');
+  overlay.style.display = 'flex';
+  let sec = 10;
+  const cntEl = document.getElementById('success-countdown');
+  cntEl.textContent = `بسته می‌شود در ${sec} ثانیه`;
+  const t = setInterval(() => {
+    sec--;
+    if (sec <= 0) { clearInterval(t); closeModal('pay-modal'); load(); return; }
+    cntEl.textContent = `بسته می‌شود در ${sec} ثانیه`;
+  }, 1000);
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+
+function closeModal(id) {
+  document.getElementById(id).style.display = 'none';
+}
+
+function cancelPayment() {
+  stopPolling();
+  if (_countdownTimer) { clearInterval(_countdownTimer); _countdownTimer = null; }
+  _currentPayId = null;
+  document.getElementById('pay-modal').style.display = 'none';
+}
+
+load();
+</script>
+</body>
+</html>

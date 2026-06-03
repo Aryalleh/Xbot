@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CrabVPN Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--bg:#07090f;--s1:#0d1117;--s2:#161b27;--s3:#1e2535;--bd:#252d3d;--acc:#3b82f6;--ac2:#06b6d4;--grn:#10b981;--red:#ef4444;--ylw:#f59e0b;--pur:#8b5cf6;--txt:#e2e8f0;--mut:#64748b;--r:10px;--f:'Vazirmatn',sans-serif}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:var(--f);font-size:14px;min-height:100vh}
+#login{min-height:100vh;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse 70% 50% at 50% 0%,#1e3a6a33,transparent)}
+.lcard{background:var(--s1);border:1px solid var(--bd);border-radius:20px;padding:48px 40px;width:360px;text-align:center}
+.logo{font-size:52px;display:block;margin-bottom:16px;animation:fl 3s ease-in-out infinite}
+@keyframes fl{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.ltitle{font-size:22px;font-weight:700;background:linear-gradient(135deg,var(--acc),var(--ac2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
+.lsub{color:var(--mut);font-size:13px;margin-bottom:32px}
+.lstep{display:none}.lstep.active{display:block}
+.ig{margin-bottom:14px;text-align:right}
+.ig label{display:block;font-size:12px;color:var(--mut);margin-bottom:5px}
+.ig input,.ig select{width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:11px 13px;color:var(--txt);font-family:var(--f);font-size:14px;outline:none;direction:rtl;transition:border-color .2s}
+.ig input:focus,.ig select:focus{border-color:var(--acc)}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:11px 22px;border-radius:8px;border:none;cursor:pointer;font-family:var(--f);font-size:14px;font-weight:600;transition:all .2s}
+.btn-p{background:var(--acc);color:#fff;width:100%;justify-content:center}
+.btn-p:hover{background:#2563eb;transform:translateY(-1px)}
+.btn-sm{padding:6px 13px;font-size:12px;border-radius:6px}
+.btn-g{background:#10b98118;color:var(--grn);border:1px solid #10b98135}.btn-g:hover{background:#10b98128}
+.btn-y{background:#f59e0b18;color:var(--ylw);border:1px solid #f59e0b35}.btn-y:hover{background:#f59e0b28}
+.btn-r{background:#ef444418;color:var(--red);border:1px solid #ef444435}.btn-r:hover{background:#ef444428}
+.btn-2{background:var(--s2);color:var(--mut);border:1px solid var(--bd)}.btn-2:hover{color:var(--txt)}
+.lerr{color:var(--red);font-size:12px;margin-top:8px;min-height:16px}
+#app{display:none;min-height:100vh}
+.sidebar{position:fixed;top:0;right:0;width:220px;height:100vh;background:var(--s1);border-left:1px solid var(--bd);display:flex;flex-direction:column;padding:24px 0;z-index:100}
+.slg{padding:0 20px 24px;border-bottom:1px solid var(--bd);display:flex;align-items:center;gap:10px}
+.slg span:first-child{font-size:28px}
+.sl-t{font-size:16px;font-weight:700}
+.sl-s{font-size:11px;color:var(--mut)}
+.nav{padding:14px 10px;flex:1}
+.ni{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:8px;cursor:pointer;color:var(--mut);font-size:13px;font-weight:500;transition:all .15s;margin-bottom:3px}
+.ni:hover{background:var(--s2);color:var(--txt)}
+.ni.active{background:#3b82f615;color:var(--acc)}
+.ni-ico{font-size:16px}
+.sf{padding:14px 20px 0;border-top:1px solid var(--bd);display:flex;flex-direction:column;gap:8px}
+.obadge{display:inline-flex;align-items:center;gap:5px;background:#10b98112;color:var(--grn);border:1px solid #10b98130;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--grn);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.main{margin-right:220px;padding:26px 30px;min-height:100vh}
+.page{display:none;animation:fi .25s ease}.page.active{display:block}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.ph{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.pt{font-size:22px;font-weight:700}
+.ps{color:var(--mut);font-size:13px;margin-bottom:24px}
+.sg{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:24px}
+.sc{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:18px;position:relative;overflow:hidden;transition:border-color .2s}
+.sc:hover{border-color:var(--s3)}
+.sc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.sc.blue::before{background:var(--acc)}.sc.grn::before{background:var(--grn)}.sc.ylw::before{background:var(--ylw)}.sc.cyn::before{background:var(--ac2)}.sc.pur::before{background:var(--pur)}
+.si{font-size:20px;margin-bottom:10px}
+.sv{font-size:26px;font-weight:700;line-height:1;margin-bottom:5px}
+.sl{color:var(--mut);font-size:12px}
+.cg{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px}
+.cc{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);padding:18px}
+.cc h3{font-size:13px;font-weight:600;color:var(--mut);margin-bottom:14px}
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:var(--r);overflow:hidden;margin-bottom:18px}
+.tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.ch{padding:14px 18px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.ch h3{font-size:14px;font-weight:600}
+table{width:100%;border-collapse:collapse}
+th{padding:11px 14px;text-align:right;font-size:11px;font-weight:600;color:var(--mut);border-bottom:1px solid var(--bd);background:var(--s2);text-transform:uppercase;letter-spacing:.5px}
+td{padding:12px 14px;border-bottom:1px solid #ffffff06;font-size:13px;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#ffffff02}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.b-g{background:#10b98112;color:var(--grn)}.b-r{background:#ef444412;color:var(--red)}.b-y{background:#f59e0b12;color:var(--ylw)}.b-b{background:#3b82f612;color:var(--acc)}.b-m{background:#ffffff0c;color:var(--mut)}.b-p{background:#8b5cf612;color:var(--pur)}
+.tb{min-width:130px}.tbb{height:5px;background:var(--s2);border-radius:3px;overflow:hidden;margin-top:3px}.tbf{height:100%;border-radius:3px;transition:width .4s}
+.tbt{font-size:11px;color:var(--mut)}
+.mo{position:fixed;inset:0;background:#00000088;backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center}
+.mo.open{display:flex}
+.mbox{background:var(--s1);border:1px solid var(--bd);border-radius:14px;padding:26px;width:480px;max-height:90vh;overflow-y:auto;animation:min .2s ease}
+@keyframes min{from{opacity:0;transform:scale(.95)}to{opacity:1;transform:scale(1)}}
+.mbox h3{font-size:16px;font-weight:700;margin-bottom:18px}
+.mf{display:flex;gap:10px;margin-top:18px;flex-direction:row-reverse}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.tw{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:999;display:flex;flex-direction:column;gap:7px;align-items:center}
+.toast{background:var(--s2);border:1px solid var(--bd);border-radius:9px;padding:11px 18px;font-size:13px;font-weight:500;animation:ti .25s ease}
+.toast.ok{border-color:#10b98138;color:var(--grn)}.toast.err{border-color:#ef444438;color:var(--red)}
+@keyframes ti{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.load{display:flex;align-items:center;justify-content:center;padding:50px;color:var(--mut);gap:10px}
+.spin{width:18px;height:18px;border:2px solid var(--bd);border-top-color:var(--acc);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.empty{padding:36px;text-align:center;color:var(--mut);font-size:13px}
+.ts{position:relative;display:inline-block;width:44px;height:24px;flex-shrink:0}
+.ts input{opacity:0;width:0;height:0}
+.tsl{position:absolute;cursor:pointer;inset:0;background:var(--s2);border:1px solid var(--bd);border-radius:34px;transition:.3s}
+.tsl:before{content:'';position:absolute;height:16px;width:16px;left:3px;bottom:3px;background:var(--mut);border-radius:50%;transition:.3s}
+.ts input:checked+.tsl{background:#10b98122;border-color:var(--grn)}.ts input:checked+.tsl:before{transform:translateX(20px);background:var(--grn)}
+.si-card{background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:16px;margin-bottom:12px}
+.si-hd{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+.si-nm{font-size:15px;font-weight:600}
+.si-tg{display:flex;gap:6px;flex-wrap:wrap}
+.si-acts{display:flex;gap:6px;flex-wrap:wrap}
+.search-inp{background:var(--s2);border:1px solid var(--bd);border-radius:7px;padding:7px 12px;color:var(--txt);font-family:var(--f);font-size:13px;width:190px;outline:none;text-align:right;direction:rtl}
+.search-inp:focus{border-color:var(--acc)}
+.rb{background:var(--s2);border:1px solid var(--bd);border-radius:7px;padding:6px 11px;color:var(--mut);cursor:pointer;font-family:var(--f);font-size:12px;display:flex;align-items:center;gap:5px;transition:all .15s}
+.rb:hover{color:var(--txt)}.rb.sp svg{animation:sp .7s linear infinite}
+@media(max-width:860px){.sidebar{width:56px}.sl-t,.sl-s,.ni span:last-child{display:none}.main{margin-right:56px;padding:18px}.cg{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div id="login">
+  <div class="lcard">
+    <span class="logo">🦀</span>
+    <div class="ltitle">CrabVPN Admin</div>
+    <div class="lsub">پنل مدیریت چند سرور</div>
+    <div class="lstep active" id="st-sec">
+      <div class="ig"><label>کلمه عبور ادمین</label><input type="password" id="inp-sec" placeholder="••••••••"></div>
+      <button class="btn btn-p" onclick="doOtp()">دریافت OTP</button>
+      <div class="lerr" id="err-sec"></div>
+    </div>
+    <div class="lstep" id="st-otp">
+      <div class="ig"><label>کد OTP (تلگرام)</label><input type="text" id="inp-otp" maxlength="6" style="letter-spacing:4px;text-align:center" placeholder="123456"></div>
+      <button class="btn btn-p" onclick="doLogin()">ورود</button>
+      <div class="lerr" id="err-otp"></div>
+    </div>
+  </div>
+</div>
+
+<div id="app">
+  <div class="sidebar">
+    <div class="slg"><span>🦀</span><div><div class="sl-t">CrabVPN</div><div class="sl-s">Admin Panel</div></div></div>
+    <nav class="nav">
+      <div class="ni active" onclick="pg('overview',this)"><span class="ni-ico">📊</span><span>داشبورد</span></div>
+      <div class="ni" onclick="pg('servers',this)"><span class="ni-ico">🖥️</span><span>سرورها</span></div>
+      <div class="ni" onclick="pg('users',this)"><span class="ni-ico">👥</span><span>کاربران</span></div>
+      <div class="ni" onclick="pg('payments',this)"><span class="ni-ico">💳</span><span>پرداخت‌ها</span></div>
+      <div class="ni" onclick="pg('settings',this)"><span class="ni-ico">⚙️</span><span>تنظیمات</span></div>
+    </nav>
+    <div class="sf">
+      <div class="obadge"><div class="dot"></div><span id="total-online">۰</span> آنلاین</div>
+    </div>
+  </div>
+
+  <div class="main">
+    <!-- OVERVIEW -->
+    <div class="page active" id="page-overview">
+      <div class="ph"><div class="pt">داشبورد</div>
+        <button class="rb" id="rfbtn" onclick="loadAll()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+          بروزرسانی
+        </button>
+      </div>
+      <div class="ps" id="lupd">در حال بارگذاری...</div>
+      <div class="sg">
+        <div class="sc blue"><div class="si">💰</div><div class="sv" id="s-rev">—</div><div class="sl">درآمد کل (تومان)</div></div>
+        <div class="sc cyn"><div class="si">📅</div><div class="sv" id="s-mon">—</div><div class="sl">این ماه (تومان)</div></div>
+        <div class="sc grn"><div class="si">👤</div><div class="sv" id="s-cus">—</div><div class="sl">کل کاربران</div></div>
+        <div class="sc ylw"><div class="si">✅</div><div class="sv" id="s-ord">—</div><div class="sl">اشتراک فعال</div></div>
+      </div>
+      <div class="cg">
+        <div class="cc"><h3>درآمد ماهانه (تومان)</h3><canvas id="ch-mon" height="200"></canvas></div>
+        <div class="cc"><h3>۳۰ روز اخیر</h3><canvas id="ch-day" height="200"></canvas></div>
+      </div>
+      <div id="srv-stats-wrap"></div>
+    </div>
+
+    <!-- SERVERS -->
+    <div class="page" id="page-servers">
+      <div class="ph"><div class="pt">سرورها</div>
+        <button class="btn btn-sm btn-g" onclick="openAddServer()">➕ سرور جدید</button>
+      </div>
+      <div class="ps">مدیریت سرورها، نوع پنل، تنظیمات فروش و بسته‌ها</div>
+      <div id="srv-list"></div>
+    </div>
+
+    <!-- SETTINGS -->
+    <div class="page" id="page-settings">
+      <div class="pt">تنظیمات</div>
+      <div class="ps">پیکربندی ربات، روش‌های پرداخت و امکانات کاربری</div>
+
+      <div class="si-card" style="margin-bottom:14px">
+        <div class="si-nm" style="margin-bottom:16px;font-size:15px">🌐 آدرس پورتال (دامنه / پورت)</div>
+        <div style="font-size:12px;color:var(--mut);margin-bottom:8px">آدرس عمومی سرور که کاربران از اینترنت به آن دسترسی دارند — برای لینک پورتال و Callback درگاه پرداخت استفاده می‌شود.</div>
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <input id="gset-portal-url" class="search-inp" style="flex:1;direction:ltr" placeholder="https://vpn.example.com:8765">
+          <button class="btn btn-sm btn-g" onclick="savePortalURL()">ذخیره</button>
+        </div>
+        <div style="background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:10px 12px">
+          <div style="font-size:11px;color:var(--mut);margin-bottom:4px">🔗 آدرس Callback فعلی (برای Tetra98):</div>
+          <code id="gset-callback-url" style="direction:ltr;font-size:12px;word-break:break-all;color:var(--ac2)">در حال بارگذاری...</code>
+        </div>
+      </div>
+
+      <div class="si-card" style="margin-bottom:14px">
+        <div class="si-nm" style="margin-bottom:16px;font-size:15px">🤖 ربات تلگرام</div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--bd)">
+          <div>
+            <div style="font-weight:500">🔗 لینک کردن کانفیگ</div>
+            <div style="font-size:12px;color:var(--mut);margin-top:3px">دکمه «لینک کانفیگ» را در منوی ربات نمایش می‌دهد. وقتی روشنه، کانفیگ متنی (SSH/NPV) در ربات ارسال نمی‌شود — کاربر از پورتال می‌گیرد.</div>
+          </div>
+          <label class="ts"><input type="checkbox" id="gset-link" onchange="setGlobalSetting('link_enabled',this.checked)"><span class="tsl"></span></label>
+        </div>
+
+        <div style="padding-top:12px">
+          <div style="font-weight:500;margin-bottom:4px">🎧 WebSocket دونیت</div>
+          <div style="font-size:12px;color:var(--mut);margin-bottom:8px">آدرس <code>wss://...</code> برای دریافت لایو دونیت‌ها. اگه بیش از ۹۰ ثانیه پیامی نیاد، reconnect میشه.</div>
+          <div style="display:flex;gap:8px">
+            <input id="gset-donation" class="search-inp" style="flex:1;direction:ltr" placeholder="wss://...">
+            <button class="btn btn-sm btn-g" onclick="saveDonationURL()">ذخیره</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="si-card">
+        <div class="si-nm" style="margin-bottom:16px;font-size:15px">💳 روش‌های پرداخت</div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:1px solid var(--bd)">
+          <div>
+            <div style="font-weight:500">🎁 دونیت استریم (Reymit)</div>
+            <div style="font-size:12px;color:var(--mut);margin-top:3px">کاربر روی استریم دونیت می‌کند — ربات آنلاین رصد می‌کند — تایید دستی ادمین</div>
+          </div>
+          <label class="ts"><input type="checkbox" id="gset-donate-en" onchange="setGlobalSetting('payment_donate_enabled',this.checked)"><span class="tsl"></span></label>
+        </div>
+
+        <div style="border-top:1px solid var(--bd);padding:12px 0">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px">
+            <div>
+              <div style="font-weight:500">💳 کارت به کارت (تأیید خودکار SMS)</div>
+              <div style="font-size:12px;color:var(--mut);margin-top:3px">کاربر مبلغ دقیق را واریز می‌کند — SMS بانکی پرداخت را خودکار تأیید می‌کند</div>
+            </div>
+            <label class="ts"><input type="checkbox" id="gset-card-en" onchange="setGlobalSetting('payment_card_enabled',this.checked)"><span class="tsl"></span></label>
+          </div>
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <input id="gset-card-number" class="search-inp" style="flex:1;direction:ltr;letter-spacing:2px" placeholder="6037-XXXX-XXXX-XXXX">
+            <button class="btn btn-sm btn-g" onclick="saveCardInfo()">ذخیره</button>
+          </div>
+          <input id="gset-card-owner" class="search-inp" style="width:100%" placeholder="نام صاحب کارت">
+          <div style="font-size:11px;color:var(--mut);margin-top:6px">آدرس SMS Webhook (برای AutoSMS / MacroDroid روی گوشی):</div>
+          <code id="gset-sms-url" style="direction:ltr;font-size:11px;word-break:break-all;color:var(--ac2);display:block;margin-top:3px"></code>
+        </div>
+
+        <div style="border-top:1px solid var(--bd);padding-top:12px;display:flex;align-items:center;justify-content:space-between;gap:12px">
+          <div>
+            <div style="font-weight:500">⚡ درگاه Tetra98 (آنلاین)</div>
+            <div style="font-size:12px;color:var(--mut);margin-top:3px">پرداخت آنلاین از طریق API Tetra98 — تایید خودکار پس از پرداخت</div>
+          </div>
+          <label class="ts"><input type="checkbox" id="gset-tetra-en" onchange="setGlobalSetting('payment_tetra_enabled',this.checked)"><span class="tsl"></span></label>
+        </div>
+
+        <div style="padding-top:12px">
+          <div style="font-weight:500;margin-bottom:6px">🔑 API Key درگاه Tetra98</div>
+          <div style="display:flex;gap:8px;margin-bottom:10px">
+            <input id="gset-tetra-key" class="search-inp" style="flex:1;direction:ltr" type="password" placeholder="api key را اینجا وارد کنید...">
+            <button class="btn btn-sm btn-g" onclick="saveTetraKey()">ذخیره</button>
+          </div>
+          <div style="background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:10px 12px">
+            <div style="font-size:11px;color:var(--mut);margin-bottom:4px">آدرس Callback — در پنل Tetra98 وارد کنید:</div>
+            <code id="tetra-callback-url" style="direction:ltr;font-size:12px;word-break:break-all;color:var(--ac2)"></code>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div class="page" id="page-users">
+      <div class="pt">کاربران</div>
+      <div class="ps">وضعیت اشتراک و مصرف همه کاربران</div>
+      <div class="card">
+        <div class="ch">
+          <h3>لیست کاربران</h3>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <select id="srv-filter" class="search-inp" style="width:160px" onchange="applyUserFilter()">
+              <option value="">همه سرورها</option>
+            </select>
+            <input class="search-inp" id="user-q" type="text" placeholder="🔍 جستجو..." oninput="applyUserFilter()">
+          </div>
+        </div>
+        <div id="users-wrap"><div class="load"><div class="spin"></div>در حال بارگذاری...</div></div>
+      </div>
+    </div>
+
+    <!-- PAYMENTS -->
+    <div class="page" id="page-payments">
+      <div class="pt">پرداخت‌ها</div>
+      <div class="ps">مدیریت پرداخت‌ها و تأیید دستی</div>
+      <div class="card">
+        <div class="ch"><h3>آخرین ۱۰۰ پرداخت</h3>
+          <select id="pay-srv-filter" class="search-inp" style="width:160px" onchange="applyPayFilter()">
+            <option value="">همه سرورها</option>
+          </select>
+        </div>
+        <div id="pay-wrap"><div class="load"><div class="spin"></div>در حال بارگذاری...</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Add/Edit Server -->
+<div class="mo" id="m-srv">
+<div class="mbox">
+  <h3 id="m-srv-title">🖥️ سرور جدید</h3>
+  <input type="hidden" id="ms-id">
+  <div class="g2">
+    <div class="ig"><label>نام سرور</label><input id="ms-name" placeholder="تهران ۱"></div>
+    <div class="ig"><label>پرچم (emoji)</label><input id="ms-flag" placeholder="🇮🇷" style="font-size:22px"></div>
+  </div>
+  <div class="ig"><label>لوکیشن</label><input id="ms-loc" placeholder="Tehran, Iran"></div>
+  <div class="ig">
+    <label>نوع پنل</label>
+    <select id="ms-type" onchange="updateServerTypeUI()">
+      <option value="ssh">🔐 SSH — xpanel (قدیمی)</option>
+      <option value="xray">⚡ Xray — 3X-UI</option>
+    </select>
+  </div>
+  <div class="ig"><label>Panel URL</label><input id="ms-url" placeholder="http://1.2.3.4:2053" dir="ltr"></div>
+
+  <!-- SSH-specific fields -->
+  <div id="ms-ssh-fields">
+    <div class="ig"><label>XPanel Token</label><input id="ms-tok" placeholder="your_token_here" dir="ltr"></div>
+    <div class="g2">
+      <div class="ig"><label>SSH Host</label><input id="ms-ssh" placeholder="1.2.3.4" dir="ltr"></div>
+      <div class="ig"><label>SSH Port</label><input id="ms-sshp" type="number" value="22"></div>
+    </div>
+  </div>
+
+  <!-- Xray-specific fields -->
+  <div id="ms-xray-fields" style="display:none">
+    <div class="g2">
+      <div class="ig"><label>نام کاربری پنل</label><input id="ms-xuser" placeholder="admin" dir="ltr" autocomplete="off"></div>
+      <div class="ig"><label>رمز عبور پنل</label><input id="ms-xpass" type="password" placeholder="••••••••" dir="ltr" autocomplete="new-password"></div>
+    </div>
+    <div class="g2">
+      <div class="ig"><label>Inbound ID</label><input id="ms-xinb" type="number" value="1" min="1" placeholder="1"></div>
+      <div class="ig"><label>Web Base Path</label><input id="ms-xbase" value="/" dir="ltr" placeholder="/"></div>
+    </div>
+    <div style="background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--mut);margin-bottom:12px">
+      💡 Inbound ID رو از آدرس پنل ۳X-UI بخون — ستون ID توی لیست Inbounds
+    </div>
+  </div>
+
+  <div class="ig"><label>Reymit Overlay URL (اختیاری)</label><input id="ms-rey" placeholder="https://reymit.ir/overlay/?key=..." dir="ltr"></div>
+  <div class="ig"><label>ترتیب نمایش</label><input id="ms-ord" type="number" value="0"></div>
+  <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px">
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><label class="ts"><input type="checkbox" id="ms-sales" checked><span class="tsl"></span></label>فروش باز</label>
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><label class="ts"><input type="checkbox" id="ms-renew" checked><span class="tsl"></span></label>تمدید باز</label>
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><label class="ts"><input type="checkbox" id="ms-trial"><span class="tsl"></span></label>تست رایگان</label>
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><label class="ts"><input type="checkbox" id="ms-active" checked><span class="tsl"></span></label>فعال</label>
+  </div>
+  <div class="mf">
+    <button class="btn btn-p" style="width:auto" onclick="submitServer()">ذخیره</button>
+    <button class="btn btn-2" onclick="cm('m-srv')">لغو</button>
+  </div>
+</div></div>
+
+<!-- Modal: Add/Edit Package -->
+<div class="mo" id="m-pkg">
+<div class="mbox">
+  <h3 id="m-pkg-title">📦 بسته جدید</h3>
+  <input type="hidden" id="mp-id">
+  <input type="hidden" id="mp-sid">
+  <div class="ig"><label>نام بسته</label><input id="mp-name" placeholder="5GB"></div>
+  <div class="g3">
+    <div class="ig"><label>حجم</label><input type="number" id="mp-traf" min="0" value="1"></div>
+    <div class="ig"><label>واحد</label>
+      <select id="mp-unit"><option value="gb">GB</option><option value="mb">MB</option></select>
+    </div>
+    <div class="ig"><label>قیمت (تومان)</label><input type="number" id="mp-price" min="0" step="1000" placeholder="50000"></div>
+  </div>
+  <div class="g2">
+    <div class="ig"><label>⏳ مدت زمان (روز)</label><input type="number" id="mp-days" min="1" max="3650" value="30" placeholder="30"></div>
+    <div class="ig"><label>ترتیب نمایش</label><input type="number" id="mp-ord" value="0"></div>
+  </div>
+  <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-bottom:14px">
+    <label class="ts"><input type="checkbox" id="mp-active" checked><span class="tsl"></span></label>بسته فعال باشد
+  </label>
+  <div class="mf">
+    <button class="btn btn-p" style="width:auto" onclick="submitPkg()">ذخیره</button>
+    <button class="btn btn-2" onclick="cm('m-pkg')">لغو</button>
+  </div>
+</div></div>
+
+<!-- Modal: Add Traffic -->
+<div class="mo" id="m-traf">
+<div class="mbox">
+  <h3>➕ افزایش حجم</h3>
+  <div class="ig"><label>یوزر XPanel</label><input id="mt-user" readonly style="opacity:.7"></div>
+  <input type="hidden" id="mt-srv">
+  <div class="g2">
+    <div class="ig"><label>مقدار</label><input type="number" id="mt-val" value="5" min="1"></div>
+    <div class="ig"><label>واحد</label><select id="mt-unit"><option value="gb">GB</option><option value="mb">MB</option></select></div>
+  </div>
+  <div class="mf">
+    <button class="btn btn-p" style="width:auto" onclick="submitTraffic()">تأیید</button>
+    <button class="btn btn-2" onclick="cm('m-traf')">لغو</button>
+  </div>
+</div></div>
+
+<div class="tw" id="tw"></div>
+
+<script>
+const API='';const SD=7;
+let T=ls();let _D={};let _CM=null,_CD=null;
+
+function ls(){const t=localStorage.getItem('ct'),e=Number(localStorage.getItem('ce')||0);if(!t||Date.now()>e){lc();return''}return t}
+function ss(t){localStorage.setItem('ct',t);localStorage.setItem('ce',String(Date.now()+SD*864e5))}
+function lc(){localStorage.removeItem('ct');localStorage.removeItem('ce')}
+
+function toast(m,type='ok'){const e=document.createElement('div');e.className=`toast ${type}`;e.textContent=(type==='ok'?'✅ ':'❌ ')+m;document.getElementById('tw').appendChild(e);setTimeout(()=>e.remove(),3200)}
+function cm(id){document.getElementById(id).classList.remove('open')}
+function om(id){document.getElementById(id).classList.add('open')}
+
+function fIRR(n,s=false){if(n==null||n==='')return'—';const v=Number(n);if(isNaN(v))return'—';if(s&&v>=1e6)return(v/1e6).toFixed(1)+'M';if(s&&v>=1e3)return(v/1e3).toFixed(0)+'K';return v.toLocaleString('fa-IR',{maximumFractionDigits:0})}
+function fN(n){return String(n).replace(/\d/g,d=>'۰۱۲۳۴۵۶۷۸۹'[d])}
+
+document.getElementById('inp-sec').addEventListener('keydown',e=>{if(e.key==='Enter')doOtp()});
+document.getElementById('inp-otp').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+
+async function doOtp(){const s=document.getElementById('inp-sec').value.trim();const er=document.getElementById('err-sec');er.textContent='';if(!s){er.textContent='کلمه عبور بنویس';return}
+const btn=document.querySelector('#st-sec .btn-p');btn.textContent='...';btn.disabled=true;
+try{const r=await fetch(`${API}/api/auth/otp`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({secret:s})});const d=await r.json();if(!d.ok){er.textContent=d.error||'خطا';return}
+document.getElementById('st-sec').classList.remove('active');document.getElementById('st-otp').classList.add('active');document.getElementById('inp-otp').focus()
+}catch{er.textContent='خطای اتصال'}finally{btn.textContent='دریافت OTP';btn.disabled=false}}
+
+async function doLogin(){const o=document.getElementById('inp-otp').value.trim();const er=document.getElementById('err-otp');er.textContent='';if(!o){er.textContent='کد را وارد کن';return}
+const btn=document.querySelector('#st-otp .btn-p');btn.textContent='...';btn.disabled=true;
+try{const r=await fetch(`${API}/api/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({otp:o})});const d=await r.json();if(!d.ok){er.textContent=d.error||'کد اشتباه';return}
+T=d.token;ss(T);enterApp()}catch{er.textContent='خطای اتصال'}finally{btn.textContent='ورود';btn.disabled=false}}
+
+async function checkSession(){if(!T)return;try{const r=await fetch(`${API}/api/admin/data?token=${T}`);if(r.ok){enterApp();return}}catch{}lc();T=''}
+
+function enterApp(){document.getElementById('login').style.display='none';document.getElementById('app').style.display='block';loadAll()}
+
+function pg(n,el){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));document.getElementById('page-'+n).classList.add('active');if(el)el.classList.add('active')}
+
+async function loadAll(){const btn=document.getElementById('rfbtn');btn.classList.add('sp');
+try{const r=await fetch(`${API}/api/admin/data?token=${T}`);if(r.status===401){lc();T='';location.reload();return}
+const d=await r.json();if(!d.ok)throw new Error(d.error);_D=d;
+renderOverview(d);renderServers(d);renderUsers(d);renderPayments(d);
+document.getElementById('lupd').textContent='آخرین بروزرسانی: '+new Date().toLocaleTimeString('fa-IR');
+}catch(e){toast('خطا: '+e.message,'err')}finally{btn.classList.remove('sp')}}
+
+// ── OVERVIEW ──────────────────────────────────────────────────────────────────
+function renderOverview(d){
+  const t=d.totals||{};
+  document.getElementById('s-rev').textContent=fIRR(t.total_revenue,true);
+  document.getElementById('s-mon').textContent=fIRR(t.this_month_revenue,true);
+  document.getElementById('s-cus').textContent=fN(t.total_customers||0);
+  document.getElementById('s-ord').textContent=fN(t.active_orders||0);
+  const tot=(d.online_counts||{});const total=Object.values(tot).reduce((a,b)=>a+b,0);
+  document.getElementById('total-online').textContent=fN(total);
+  const mon=[...(d.monthly||[])].reverse();
+  if(_CM)_CM.destroy();
+  _CM=new Chart(document.getElementById('ch-mon'),{type:'bar',data:{labels:mon.map(r=>r.month),datasets:[{label:'تومان',data:mon.map(r=>r.revenue||0),backgroundColor:'#3b82f628',borderColor:'#3b82f6',borderWidth:2,borderRadius:5}]},options:cOpts()});
+  const day=[...(d.daily||[])].reverse();
+  if(_CD)_CD.destroy();
+  _CD=new Chart(document.getElementById('ch-day'),{type:'line',data:{labels:day.map(r=>(r.day||'').slice(5)),datasets:[{label:'تومان',data:day.map(r=>r.revenue||0),borderColor:'#06b6d4',backgroundColor:'#06b6d412',fill:true,tension:.4,pointRadius:3}]},options:cOpts()});
+  // per-server stats
+  const srvs=d.servers||[];const oc=d.online_counts||{};
+  const wrap=document.getElementById('srv-stats-wrap');
+  if(!srvs.length){wrap.innerHTML='';return}
+  wrap.innerHTML='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:24px">'+
+    srvs.filter(s=>s.is_active).map(s=>`<div class="sc ${s.sales_open?'grn':'red'}" style="cursor:pointer" onclick="pg('servers',document.querySelector('.ni:nth-child(2)'))">
+      <div style="font-size:22px;margin-bottom:8px">${s.flag}</div>
+      <div style="font-weight:700;margin-bottom:4px">${s.name}</div>
+      <div style="color:var(--mut);font-size:12px">${s.location}</div>
+      <div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap">
+        ${s.sales_open?'<span class="badge b-g">فروش باز</span>':'<span class="badge b-r">فروش بسته</span>'}
+        <span class="badge b-b">${fN(oc[s.id]||0)} آنلاین</span>
+      </div>
+    </div>`).join('')+'</div>'
+}
+function cOpts(){return{responsive:true,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#1e2535'},ticks:{color:'#64748b',font:{family:'Vazirmatn',size:11}}},y:{grid:{color:'#1e2535'},ticks:{color:'#64748b',font:{family:'Vazirmatn',size:11},callback:v=>v>=1e6?(v/1e6).toFixed(1)+'M':v>=1e3?(v/1e3).toFixed(0)+'K':v}}}}}
+
+// ── SERVERS PAGE ──────────────────────────────────────────────────────────────
+function renderServers(d){
+  loadGlobalSettings();
+  const srvs=(d.servers||[]).sort((a,b)=>a.display_order-b.display_order);
+  const wrap=document.getElementById('srv-list');
+  if(!srvs.length){wrap.innerHTML='<div class="empty">هیچ سروری تعریف نشده</div>';return}
+  wrap.innerHTML=srvs.map(s=>`
+    <div class="si-card">
+      <div class="si-hd">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:24px">${s.flag}</span>
+          <div>
+            <div class="si-nm">${s.name}</div>
+            <div style="font-size:12px;color:var(--mut)">${s.location}</div>
+          </div>
+        </div>
+        <div class="si-tg">
+          ${s.is_active?'<span class="badge b-g">فعال</span>':'<span class="badge b-r">غیرفعال</span>'}
+          ${s.server_type==='xray'?'<span class="badge b-p">⚡ Xray</span>':'<span class="badge b-m">🔐 SSH</span>'}
+          ${s.sales_open?'<span class="badge b-b">فروش باز</span>':'<span class="badge b-m">فروش بسته</span>'}
+          ${s.renewal_open?'<span class="badge b-p">تمدید باز</span>':'<span class="badge b-m">تمدید بسته</span>'}
+          ${s.free_trial?'<span class="badge b-y">تست رایگان</span>':''}
+          ${s.reymit_url?'<span class="badge b-g">🎧 Reymit</span>':''}
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--mut);margin-bottom:10px;direction:ltr;text-align:right">${s.xpanel_url}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;align-items:center">
+        <div class="si-acts">
+          <button class="btn btn-sm btn-y" onclick="openEditServer(${s.id})">✏️ ویرایش</button>
+          <button class="btn btn-sm btn-g" onclick="openPkgs(${s.id},'${s.name} ${s.flag}')">📦 بسته‌ها</button>
+          <button class="btn btn-sm btn-r" onclick="delServer(${s.id},'${s.name}')">🗑</button>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center">
+          ${mkToggle('sales_open',s.id,s.sales_open,'فروش')}
+          ${mkToggle('renewal_open',s.id,s.renewal_open,'تمدید')}
+          ${mkToggle('free_trial',s.id,s.free_trial,'تست')}
+          ${mkToggle('is_active',s.id,s.is_active,'فعال')}
+        </div>
+      </div>
+      <div id="pkgs-${s.id}" style="display:none;margin-top:14px;border-top:1px solid var(--bd);padding-top:12px"></div>
+    </div>`).join('');
+}
+function mkToggle(key,sid,val,label){
+  return`<label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px;color:var(--mut)">
+    <label class="ts"><input type="checkbox" ${val?'checked':''} onchange="srvToggle(${sid},'${key}',this.checked)"><span class="tsl"></span></label>${label}</label>`
+}
+async function loadGlobalSettings(){
+  try{const r=await fetch(`${API}/api/admin/settings?token=${T}`);const d=await r.json();
+    if(d.ok){
+      const el=document.getElementById('gset-link');if(el)el.checked=!!d.settings.link_enabled;
+      const du=document.getElementById('gset-donation');if(du)du.value=d.settings.donation_url||'';
+      const de=document.getElementById('gset-donate-en');if(de)de.checked=!!d.settings.payment_donate_enabled;
+      const ce=document.getElementById('gset-card-en');if(ce)ce.checked=!!d.settings.payment_card_enabled;
+      const cn=document.getElementById('gset-card-number');if(cn)cn.value=d.settings.card_number||'';
+      const co=document.getElementById('gset-card-owner');if(co)co.value=d.settings.card_owner||'';
+      const su=document.getElementById('gset-sms-url');if(su)su.textContent=(d.settings.callback_url||'').replace('/api/payment/callback','/api/sms?msg=');
+      const te=document.getElementById('gset-tetra-en');if(te)te.checked=!!d.settings.payment_tetra_enabled;
+      const tk=document.getElementById('gset-tetra-key');if(tk&&d.settings.tetra_api_key)tk.placeholder='(ذخیره شده)';
+      const pu=document.getElementById('gset-portal-url');if(pu)pu.value=d.settings.portal_base_url||'';
+      const cb=document.getElementById('gset-callback-url');if(cb)cb.textContent=d.settings.callback_url||'';
+      const cb2=document.getElementById('tetra-callback-url');if(cb2)cb2.textContent=d.settings.callback_url||'';
+    }
+  }catch(e){}}
+async function setGlobalSetting(key,val){
+  try{const r=await fetch(`${API}/api/admin/settings/set`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:T,key,value:val})});
+  const d=await r.json();if(!d.ok)throw new Error(d.error);toast(`${key} → ${val?'on':'off'}`)}catch(e){toast(e.message,'err')}}
+async function savePortalURL(){
+  const url=document.getElementById('gset-portal-url').value.trim();
+  if(!url){toast('آدرس نمی‌تواند خالی باشد','err');return}
+  try{const r=await fetch(`${API}/api/admin/settings/set`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:T,key:'portal_base_url',value:url})});
+  const d=await r.json();if(!d.ok)throw new Error(d.error);
+  const cb=document.getElementById('gset-callback-url');if(cb)cb.textContent=url+'/api/payment/callback';
+  const cb2=document.getElementById('tetra-callback-url');if(cb2)cb2.textContent=url+'/api/payment/callback';
+  toast('آدرس پورتال ذخیره شد')}catch(e){toast(e.message,'err')}}
+async function saveCardInfo(){
+  const num=document.getElementById('gset-card-number').value.trim();
+  const own=document.getElementById('gset-card-owner').value.trim();
+  if(!num){toast('شماره کارت خالی است','err');return}
+  try{
+    await Promise.all([
+      fetch(`${API}/api/admin/settings/set`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:T,key:'card_number',value:num})}),
+      fetch(`${API}/api/admin/settings/set`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:T,key:'card_owner',value:own})}),
+    ]);
+    toast('اطلاعات کارت ذخیره شد')
+  }catch(e){toast(e.message,'err')}}
+async function saveTetraKey(){
+  const key=document.getElementById('gset-tetra-key').value.trim();
+  if(!key){toast('API Key خالی است','err');return}
+  try{const r=await fetch(`${API}/api/admin/settings/set`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:T,key:'tetra_api_key',value:key})});
+  const d=await r.json();if(!d.ok)throw new Error(d.error);
+  document.getElementById('gset-tetra-key').value='';
+  document.getElementById('gset-tetra-key').placeholder='(ذخیره شده)';
+  toast('API Key Tetra98 ذخیره شد')}catch(e){toast(e.message,'err')}}
+async function saveDonationURL(){
+  const url=document.getElementById('gset-donation').value.trim();
+  try{const r=await fetch(`${API}/api/admin/settings/set`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:T,key:'donation_url',value:url})});
+  const d=await r.json();if(!d.ok)throw new Error(d.error);toast('URL ذخیره شد — listener ظرف چند ثانیه reconnect میشه')}catch(e){toast(e.message,'err')}}
+async function srvToggle(sid,key,val){
+  try{const r=await fetch(`${API}/api/admin/servers/toggle`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:T,server_id:sid,key,value:val})});
+  const d=await r.json();if(!d.ok)throw new Error(d.error);toast(`${key} → ${val?'on':'off'}`)}catch(e){toast(e.message,'err')}}
+
+async function openPkgs(sid,sname){
+  const wrap=document.getElementById(`pkgs-${sid}`);
+  const visible=wrap.style.display!=='none';
+  document.querySelectorAll('[id^="pkgs-"]').forEach(el=>el.style.display='none');
+  if(visible){return}
+  wrap.style.display='block';
+  wrap.innerHTML='<div class="load"><div class="spin"></div>بارگذاری بسته‌ها...</div>';
+  try{const r=await fetch(`${API}/api/admin/packages?token=${T}&server_id=${sid}`);
+  const d=await r.json();if(!d.ok)throw new Error(d.error);
+  renderPkgsTable(sid,sname,d.packages||[],wrap)}catch(e){wrap.innerHTML=`<div class="empty">خطا: ${e.message}</div>`}}
+
+function renderPkgsTable(sid,sname,pkgs,wrap){
+  const rows=pkgs.map(p=>`<tr>
+    <td><b>${p.name}</b></td>
+    <td><span class="badge b-m">${p.traffic_amount} ${p.traffic_unit.toUpperCase()}</span></td>
+    <td><span class="badge b-b">⏳ ${p.duration_days||30} روز</span></td>
+    <td>${p.price_irr!=null?`<span class="badge b-g">${Number(p.price_irr).toLocaleString('fa-IR',{maximumFractionDigits:0})} T</span>`:'<span class="badge b-y">دستی</span>'}</td>
+    <td>${p.is_active?'<span class="badge b-g">فعال</span>':'<span class="badge b-r">غیرفعال</span>'}</td>
+    <td style="display:flex;gap:6px">
+      <button class="btn btn-sm btn-y" onclick='openEditPkg(${JSON.stringify(JSON.stringify(p))})'>✏️</button>
+      <button class="btn btn-sm btn-r" onclick="delPkg(${p.id},'${p.name}',${sid})">🗑</button>
+    </td></tr>`).join('');
+  wrap.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+    <span style="font-size:13px;font-weight:600">📦 بسته‌های ${sname}</span>
+    <button class="btn btn-sm btn-g" onclick="openAddPkg(${sid})">➕ بسته جدید</button>
+  </div>
+  <div class="tbl-wrap"><table><thead><tr><th>نام</th><th>حجم</th><th>مدت</th><th>قیمت</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>${rows||'<tr><td colspan="6" style="text-align:center;color:var(--mut)">بسته‌ای نیست</td></tr>'}</tbody></table></div>`
+}
+
+function updateServerTypeUI(){
+  const t=document.getElementById('ms-type').value;
+  document.getElementById('ms-ssh-fields').style.display=t==='ssh'?'':'none';
+  document.getElementById('ms-xray-fields').style.display=t==='xray'?'':'none';
+}
+function openAddServer(){
+  document.getElementById('m-srv-title').textContent='🖥️ سرور جدید';
+  document.getElementById('ms-id').value='';document.getElementById('ms-name').value='';
+  document.getElementById('ms-flag').value='🌍';document.getElementById('ms-loc').value='';
+  document.getElementById('ms-url').value='';document.getElementById('ms-tok').value='';
+  document.getElementById('ms-ssh').value='127.0.0.1';document.getElementById('ms-sshp').value='22';
+  document.getElementById('ms-type').value='ssh';
+  document.getElementById('ms-xuser').value='';document.getElementById('ms-xpass').value='';
+  document.getElementById('ms-xinb').value='1';document.getElementById('ms-xbase').value='/';
+  document.getElementById('ms-rey').value='';document.getElementById('ms-ord').value='0';
+  document.getElementById('ms-sales').checked=true;document.getElementById('ms-renew').checked=true;
+  document.getElementById('ms-trial').checked=false;document.getElementById('ms-active').checked=true;
+  updateServerTypeUI();om('m-srv');
+}
+function openEditServer(id){
+  const s=(_D.servers||[]).find(x=>x.id===id);
+  if(!s){toast('سرور یافت نشد','err');return}
+  document.getElementById('m-srv-title').textContent='✏️ ویرایش سرور';
+  document.getElementById('ms-id').value=s.id;
+  document.getElementById('ms-name').value=s.name;
+  document.getElementById('ms-flag').value=s.flag;
+  document.getElementById('ms-loc').value=s.location;
+  document.getElementById('ms-url').value=s.xpanel_url;
+  document.getElementById('ms-tok').value=s.xpanel_token||'';
+  document.getElementById('ms-ssh').value=s.ssh_host||'127.0.0.1';
+  document.getElementById('ms-sshp').value=s.ssh_port||22;
+  document.getElementById('ms-type').value=s.server_type||'ssh';
+  document.getElementById('ms-xuser').value=s.xpanel_username||'';
+  document.getElementById('ms-xpass').value=s.xpanel_password||'';
+  document.getElementById('ms-xinb').value=s.xpanel_inbound_id||1;
+  document.getElementById('ms-xbase').value=s.xpanel_webbasepath||'/';
+  document.getElementById('ms-rey').value=s.reymit_url||'';
+  document.getElementById('ms-ord').value=s.display_order||0;
+  document.getElementById('ms-sales').checked=!!s.sales_open;
+  document.getElementById('ms-renew').checked=!!s.renewal_open;
+  document.getElementById('ms-trial').checked=!!s.free_trial;
+  document.getElementById('ms-active').checked=!!s.is_active;
+  updateServerTypeUI();om('m-srv');
+}
+async function submitServer(){
+  const type=document.getElementById('ms-type').value;
+  const d={
+    id:document.getElementById('ms-id').value||null,
+    name:document.getElementById('ms-name').value.trim(),
+    flag:document.getElementById('ms-flag').value.trim()||'🌍',
+    location:document.getElementById('ms-loc').value.trim(),
+    xpanel_url:document.getElementById('ms-url').value.trim(),
+    server_type:type,
+    xpanel_token:document.getElementById('ms-tok').value.trim(),
+    ssh_host:document.getElementById('ms-ssh').value.trim()||'127.0.0.1',
+    ssh_port:parseInt(document.getElementById('ms-sshp').value)||22,
+    xpanel_username:document.getElementById('ms-xuser').value.trim(),
+    xpanel_password:document.getElementById('ms-xpass').value.trim(),
+    xpanel_inbound_id:parseInt(document.getElementById('ms-xinb').value)||1,
+    xpanel_webbasepath:document.getElementById('ms-xbase').value.trim()||'/',
+    reymit_url:document.getElementById('ms-rey').value.trim(),
+    display_order:parseInt(document.getElementById('ms-ord').value)||0,
+    sales_open:document.getElementById('ms-sales').checked,
+    renewal_open:document.getElementById('ms-renew').checked,
+    free_trial:document.getElementById('ms-trial').checked,
+    is_active:document.getElementById('ms-active').checked
+  };
+  if(!d.name||!d.xpanel_url){toast('نام و Panel URL اجباری است','err');return}
+  if(type==='xray'&&(!d.xpanel_username||!d.xpanel_password)){toast('نام کاربری و رمز پنل اجباری است','err');return}
+  if(type==='ssh'&&!d.xpanel_token){toast('XPanel Token اجباری است','err');return}
+  try{const r=await fetch(`${API}/api/admin/servers/upsert`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...d,token:T})});const x=await r.json();if(!x.ok)throw new Error(x.error);toast('سرور ذخیره شد');cm('m-srv');loadAll()}catch(e){toast(e.message,'err')}}
+async function delServer(id,name){if(!confirm(`حذف سرور «${name}»؟ (اگه سفارش فعال داشته باشه نمیشه)`))return;
+try{const r=await fetch(`${API}/api/admin/servers/delete`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:T,id})});const d=await r.json();if(!d.ok)throw new Error(d.error);toast('سرور حذف شد');loadAll()}catch(e){toast(e.message,'err')}}
+
+function openAddPkg(sid){document.getElementById('m-pkg-title').textContent='📦 بسته جدید';document.getElementById('mp-id').value='';document.getElementById('mp-sid').value=sid;document.getElementById('mp-name').value='';document.getElementById('mp-traf').value='1';document.getElementById('mp-unit').value='gb';document.getElementById('mp-price').value='';document.getElementById('mp-days').value='30';document.getElementById('mp-ord').value='0';document.getElementById('mp-active').checked=true;om('m-pkg')}
+function openEditPkg(js){const p=JSON.parse(js);document.getElementById('m-pkg-title').textContent='✏️ ویرایش بسته';document.getElementById('mp-id').value=p.id;document.getElementById('mp-sid').value=p.server_id;document.getElementById('mp-name').value=p.name;document.getElementById('mp-traf').value=p.traffic_amount;document.getElementById('mp-unit').value=p.traffic_unit||'gb';document.getElementById('mp-price').value=p.price_irr!=null?p.price_irr:'';document.getElementById('mp-days').value=p.duration_days||30;document.getElementById('mp-ord').value=p.display_order;document.getElementById('mp-active').checked=!!p.is_active;om('m-pkg')}
+async function submitPkg(){
+  const prRaw=document.getElementById('mp-price').value.trim();
+  const d={id:document.getElementById('mp-id').value||null,server_id:parseInt(document.getElementById('mp-sid').value),name:document.getElementById('mp-name').value.trim(),traffic_amount:parseInt(document.getElementById('mp-traf').value)||0,traffic_unit:document.getElementById('mp-unit').value,price_irr:prRaw===''?null:parseFloat(prRaw),duration_days:parseInt(document.getElementById('mp-days').value)||30,display_order:parseInt(document.getElementById('mp-ord').value)||0,is_active:document.getElementById('mp-active').checked};
+  if(!d.name){toast('نام بسته اجباری است','err');return}
+  try{const r=await fetch(`${API}/api/admin/packages/upsert`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...d,token:T})});const x=await r.json();if(!x.ok)throw new Error(x.error);toast('بسته ذخیره شد');cm('m-pkg');loadAll()}catch(e){toast(e.message,'err')}}
+async function delPkg(id,name,sid){if(!confirm(`حذف بسته «${name}»؟`))return;
+try{const r=await fetch(`${API}/api/admin/packages/delete`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:T,id})});const d=await r.json();if(!d.ok)throw new Error(d.error);toast('بسته حذف شد');openPkgs(sid,'');loadAll()}catch(e){toast(e.message,'err')}}
+
+// ── USERS ─────────────────────────────────────────────────────────────────────
+function renderUsers(d){
+  const sel=document.getElementById('srv-filter');const cur=sel.value;
+  sel.innerHTML='<option value="">همه سرورها</option>'+(d.servers||[]).map(s=>`<option value="${s.id}">${s.flag} ${s.name}</option>`).join('');
+  sel.value=cur;
+  const sel2=document.getElementById('pay-srv-filter');const cur2=sel2.value;
+  sel2.innerHTML='<option value="">همه سرورها</option>'+(d.servers||[]).map(s=>`<option value="${s.id}">${s.flag} ${s.name}</option>`).join('');
+  sel2.value=cur2;
+  applyUserFilter();
+}
+function applyUserFilter(){
+  const q=(document.getElementById('user-q').value||'').toLowerCase();
+  const sid=parseInt(document.getElementById('srv-filter').value)||0;
+  let list=(_D.users||[]);
+  if(sid)list=list.filter(u=>u.server_id===sid);
+  if(q)list=list.filter(u=>(u.name||'').toLowerCase().includes(q)||(u.xpanel_user||'').toLowerCase().includes(q)||(u.phone||'').toLowerCase().includes(q));
+  const wrap=document.getElementById('users-wrap');
+  if(!list.length){wrap.innerHTML='<div class="empty">کاربری یافت نشد</div>';return}
+  const srv=Object.fromEntries((_D.servers||[]).map(s=>[s.id,s]));
+  const rows=list.map(u=>{
+    const tot=Number(u.total_mb||0),used=Number(u.used_mb||0),rem=Number(u.remaining_mb||0);
+    const pct=tot>0?Math.min(100,Math.round(used/tot*100)):0;
+    const bc=pct>85?'var(--red)':pct>60?'var(--ylw)':'var(--grn)';
+    const tf=tot<1024?`${rem.toFixed(0)} / ${tot.toFixed(0)} MB`:`${(rem/1024).toFixed(2)} / ${(tot/1024).toFixed(2)} GB`;
+    return`<tr>
+      <td><b>${u.name||'—'}</b><br><span style="font-size:11px;color:var(--mut)">${u.phone||'—'}</span></td>
+      <td><span class="badge b-b">${u.server_flag||''} ${u.server_name||'—'}</span></td>
+      <td><code style="background:var(--s2);padding:2px 6px;border-radius:4px;font-size:11px">${u.xpanel_user||'—'}</code></td>
+      <td><span class="badge b-m">${u.pkg||'—'}</span></td>
+      <td class="tb"><div class="tbt">${tf} (${pct}%)</div><div class="tbb"><div class="tbf" style="width:${pct}%;background:${bc}"></div></div></td>
+      <td><span class="badge b-b">${u.expdate||'—'}</span></td>
+      <td><a href="/portal/${u.portal_token}" target="_blank" class="badge b-p" style="cursor:pointer">🔗 پورتال</a></td>
+      <td><button class="btn btn-sm btn-y" onclick="openTraf('${u.xpanel_user}',${u.server_id})">➕</button></td>
+    </tr>`}).join('');
+  wrap.innerHTML=`<div class="tbl-wrap"><table><thead><tr><th>کاربر</th><th>سرور</th><th>یوزر XPanel</th><th>بسته</th><th>مصرف</th><th>انقضا</th><th>پورتال</th><th>حجم</th></tr></thead><tbody>${rows}</tbody></table></div>`
+}
+function openTraf(user,sid){document.getElementById('mt-user').value=user;document.getElementById('mt-srv').value=sid;document.getElementById('mt-val').value='5';document.getElementById('mt-unit').value='gb';om('m-traf')}
+async function submitTraffic(){
+  const u=document.getElementById('mt-user').value,sid=parseInt(document.getElementById('mt-srv').value),t=parseInt(document.getElementById('mt-val').value),un=document.getElementById('mt-unit').value;
+  if(!t||t<1){toast('مقدار نامعتبر','err');return}
+  try{const r=await fetch(`${API}/api/admin/traffic`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:T,server_id:sid,username:u,traffic:t,unit:un})});const d=await r.json();if(!d.ok)throw new Error(d.error);toast(`${t}${un.toUpperCase()} به ${u} اضافه شد`);cm('m-traf');loadAll()}catch(e){toast(e.message,'err')}}
+
+// ── PAYMENTS ──────────────────────────────────────────────────────────────────
+function renderPayments(d){applyPayFilter()}
+function applyPayFilter(){
+  const sid=parseInt(document.getElementById('pay-srv-filter').value)||0;
+  const srv=Object.fromEntries((_D.servers||[]).map(s=>[s.id,s]));
+  let list=(_D.pending||[]);
+  if(sid)list=list.filter(p=>p.server_id===sid);
+  const wrap=document.getElementById('pay-wrap');
+  if(!list.length){wrap.innerHTML='<div class="empty">پرداختی نیست</div>';return}
+  const rows=list.map(p=>{
+    let sb;if(p.status==='approved')sb='<span class="badge b-g">تأیید</span>';else if(p.status==='expired')sb='<span class="badge b-r">منقضی</span>';else if(p.status==='pending_review')sb='<span class="badge b-y">انتظار</span>';else sb=`<span class="badge b-m">${p.status}</span>`;
+    const sv=srv[p.server_id]||{};
+    return`<tr>
+      <td><b>#${p.id}</b></td>
+      <td>${p.full_name||'—'}<br><span style="font-size:11px;color:var(--mut)">@${p.telegram_username||'—'}</span></td>
+      <td><span class="badge b-b">${sv.flag||''} ${sv.name||'—'}</span></td>
+      <td><span class="badge b-m">${p.pkg_name||'—'}</span></td>
+      <td><b>${p.amount?Number(p.amount).toLocaleString('fa-IR',{maximumFractionDigits:0})+' T':'—'}</b></td>
+      <td><code style="font-size:11px">${p.payer_name||'—'}</code></td>
+      <td>${sb}</td>
+      <td style="font-size:11px;color:var(--mut)">${(p.expires_at||p.created_at||'').slice(0,16)}</td>
+      <td>${p.status==='pending_review'?`<button class="btn btn-sm btn-g" onclick="approvePay(${p.id},this)">✅ تأیید</button>`:''}</td>
+    </tr>`}).join('');
+  wrap.innerHTML=`<div class="tbl-wrap"><table><thead><tr><th>#</th><th>کاربر</th><th>سرور</th><th>بسته</th><th>مبلغ</th><th>نام</th><th>وضعیت</th><th>تاریخ</th><th>عملیات</th></tr></thead><tbody>${rows}</tbody></table></div>`
+}
+async function approvePay(id,btn){btn.disabled=true;btn.textContent='...';
+try{const r=await fetch(`${API}/api/admin/approve`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:T,payment_id:id})});const d=await r.json();if(!d.ok)throw new Error(d.error);toast(`payment #${id} تأیید شد`);loadAll()}catch(e){toast(e.message,'err');btn.disabled=false;btn.textContent='✅ تأیید'}}
+
+document.querySelectorAll('.mo').forEach(el=>el.addEventListener('click',e=>{if(e.target===el)el.classList.remove('open')}));
+setInterval(()=>{if(T)loadAll()},90000);
+checkSession();
+</script>
+</body>
+</html>
