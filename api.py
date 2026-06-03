@@ -470,7 +470,7 @@ async def handle_portal_data(request: web.Request) -> web.Response:
 
     servers = {s.id: s for s in get_all_servers()}
 
-    hide_config = get_setting("link_enabled", "1") == "1"
+    hide_config = get_setting("link_enabled", "1") != "1"
 
     def _enrich(o):
         sv = servers.get(o["server_id"])
@@ -583,6 +583,12 @@ async def handle_portal_initiate_payment(request: web.Request) -> web.Response:
     pkg = get_package(package_id)
     if not pkg or pkg.server_id != existing["server_id"]:
         return web.json_response({"ok": False, "error": "invalid package"}, status=400)
+
+    server = get_server(existing["server_id"])
+    if not server:
+        return web.json_response({"ok": False, "error": "server not found"}, status=404)
+    if not server.renewal_open:
+        return web.json_response({"ok": False, "error": "تمدید در حال حاضر بسته است"}, status=400)
 
     new_order_id = create_order(customer["id"], package_id, existing["server_id"], order_type="renewal")
     payment_id   = create_payment(new_order_id, existing["server_id"], pkg.price_irr,
