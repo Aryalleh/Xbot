@@ -338,26 +338,29 @@ def _xray_adduser(server, pkg, username: str, customer) -> str:
     expiry_ms = int((datetime.utcnow() + timedelta(days=days)).timestamp() * 1000)
     total_bytes = pkg.traffic_amount * (1024 ** 3 if pkg.traffic_unit == "gb" else 1024 ** 2)
     tg_id = str(customer.get("telegram_id", "") if isinstance(customer, dict) else getattr(customer, "telegram_id", ""))
+    # Use tg_id as email identifier; fall back to username if tg_id is unavailable
+    email = tg_id if tg_id else username
     client = {
         "id": client_uuid, "flow": "",
-        "email": username, "limitIp": 0,
+        "email": email, "limitIp": 0,
         "totalGB": total_bytes, "expiryTime": expiry_ms,
         "enable": True, "tgId": tg_id,
         "subId": "", "reset": 0,
         "comment": f"pkg={pkg.name}",
     }
+    settings_str = json.dumps({"clients": [client]})
 
     def _handle_exist(msg: str) -> Optional[str]:
         if "exist" in msg.lower() or "duplicate" in msg.lower():
-            existing = _xray_get_client(server, username)
+            existing = _xray_get_client(server, email)
             if existing and existing.get("uuid"):
                 return existing["uuid"]
         return None
 
-    # Try v3.x: POST /panel/api/clients/add (body includes inboundIds array)
+    # Try v3.x path first — same {id, settings} body format, JSON-encoded
     try:
-        payload_v3 = {**client, "inboundIds": [int(server.xpanel_inbound_id)]}
-        body = _xray_req(server, "post", "/panel/api/clients/add", json=payload_v3)
+        body = _xray_req(server, "post", "/panel/api/clients/add",
+                         json={"id": int(server.xpanel_inbound_id), "settings": settings_str})
         if body.get("success"):
             return client_uuid
         msg = body.get("msg", "")
@@ -369,10 +372,9 @@ def _xray_adduser(server, pkg, username: str, customer) -> str:
         if "404" not in str(e):
             raise
 
-    # Fall back to v2.x: POST /panel/api/inbounds/addClient
+    # Fall back to v2.x path — form-encoded body
     body = _xray_req(server, "post", "/panel/api/inbounds/addClient",
-                     data={"id": server.xpanel_inbound_id,
-                           "settings": json.dumps({"clients": [client]})})
+                     data={"id": server.xpanel_inbound_id, "settings": settings_str})
     if not body.get("success"):
         msg = body.get("msg", "")
         uid = _handle_exist(msg)

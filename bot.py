@@ -108,7 +108,7 @@ async def do_provision(bot, payment_row, donor_name: str = "", donated_amount: f
     order_type = pay["order_type"]
     server_id  = int(pay["server_id"])
     server     = get_server(server_id)
-    username   = f"tg_{tg_id}"
+    username   = str(tg_id)
 
     # approve
     with closing(__import__("models").get_conn()) as conn:
@@ -683,7 +683,7 @@ async def cb_confirm(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         if customer_used_free_trial(uid):
             await q.edit_message_text("قبلاً از تست رایگان استفاده کردی.")
             return ST_MAIN
-        uname = f"tg_{uid}"
+        uname = str(uid)
         pw    = generate_password()
         try:
             if customer_has_account_on_server(uid, server_id):
@@ -995,7 +995,7 @@ async def receive_payer(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
         conn.execute("UPDATE payments SET payer_name=?,updated_at=? WHERE id=?", (payer_name, now_iso(), payment_id))
         conn.commit()
 
-    username = f"tg_{update.effective_user.id}"
+    username = str(update.effective_user.id)
     await update.message.reply_text(
         f"✅ ثبت شد — منتظر دونیت.\nPayment ID: {payment_id}\nبه محض رسیدن، اکانتت فعال میشه 🚀"
     )
