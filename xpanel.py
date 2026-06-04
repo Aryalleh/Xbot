@@ -291,11 +291,17 @@ def _xray_req(server, method: str, path: str, **kwargs) -> dict:
 def _xray_get_client(server, username: str) -> Optional[dict]:
     """Fetch clientStats by email. Returns the stats dict or None."""
     try:
+        try:
+            body = _xray_req(server, "get", f"/panel/api/clients/traffic/{username}")
+            obj = body.get("obj")
+            return (obj if isinstance(obj, dict) else (obj[0] if obj else None)) if obj else None
+        except Exception as e:
+            if "404" not in str(e):
+                raise
+        # v3.x endpoint not found — fall back to v2.x
         body = _xray_req(server, "get", f"/panel/api/inbounds/getClientTraffics/{username}")
         obj = body.get("obj")
-        if not obj:
-            return None
-        return obj if isinstance(obj, dict) else (obj[0] if obj else None)
+        return (obj if isinstance(obj, dict) else (obj[0] if obj else None)) if obj else None
     except Exception as e:
         logger.warning("xray_get_client error for %s: %s", username, e)
         return None
@@ -320,16 +326,38 @@ def _xray_adduser(server, pkg, username: str, customer) -> str:
         "subId": "", "reset": 0,
         "comment": f"pkg={pkg.name}",
     }
+
+    def _handle_exist(msg: str) -> Optional[str]:
+        if "exist" in msg.lower() or "duplicate" in msg.lower():
+            existing = _xray_get_client(server, username)
+            if existing and existing.get("uuid"):
+                return existing["uuid"]
+        return None
+
+    # Try v3.x: POST /panel/api/clients/add (body includes inboundIds array)
+    try:
+        payload_v3 = {**client, "inboundIds": [int(server.xpanel_inbound_id)]}
+        body = _xray_req(server, "post", "/panel/api/clients/add", json=payload_v3)
+        if body.get("success"):
+            return client_uuid
+        msg = body.get("msg", "")
+        uid = _handle_exist(msg)
+        if uid:
+            return uid
+        raise RuntimeError(f"addClient failed: {msg}")
+    except Exception as e:
+        if "404" not in str(e):
+            raise
+
+    # Fall back to v2.x: POST /panel/api/inbounds/addClient
     body = _xray_req(server, "post", "/panel/api/inbounds/addClient",
                      data={"id": server.xpanel_inbound_id,
                            "settings": json.dumps({"clients": [client]})})
     if not body.get("success"):
         msg = body.get("msg", "")
-        # If client already exists, fetch their existing UUID
-        if "exist" in msg.lower() or "duplicate" in msg.lower():
-            existing = _xray_get_client(server, username)
-            if existing and existing.get("uuid"):
-                return existing["uuid"]
+        uid = _handle_exist(msg)
+        if uid:
+            return uid
         raise RuntimeError(f"addClient failed: {msg}")
     return client_uuid
 
@@ -357,26 +385,53 @@ def _xray_get_user(server, username: str) -> Optional[dict]:
     return None
 
 
-def _xray_build_update_payload(server, u: dict, **overrides) -> dict:
+def _xray_reset_traffic(server, username: str) -> None:
+    """Reset client traffic counters. Tries v3.x, falls back to v2.x."""
+    try:
+        _xray_req(server, "post", f"/panel/api/clients/resetTraffic/{username}")
+        return
+    except Exception as e:
+        if "404" not in str(e):
+            raise
+    # Fall back to v2.x
+    _xray_req(server, "post",
+              f"/panel/api/inbounds/{server.xpanel_inbound_id}/resetClientTraffic/{username}")
+
+
+def _xray_update_client(server, u: dict, **overrides) -> None:
+    """Update client settings. Tries v3.x /panel/api/clients/update/{email}, falls back to v2.x."""
+    email = u.get("email", "")
     client = {
         "id": u["uuid"], "flow": u.get("flow", ""),
-        "email": u.get("email", ""), "limitIp": u.get("limitIp", 0),
+        "email": email, "limitIp": u.get("limitIp", 0),
         "totalGB": int(u.get("total", 0) or 0),
         "expiryTime": u.get("expiryTime", 0),
         "enable": True,
         "tgId": str(u.get("tgId", "")), "subId": u.get("subId", ""), "reset": 0,
+        "comment": u.get("comment", ""),
     }
     client.update(overrides)
-    return {"id": server.xpanel_inbound_id, "settings": json.dumps({"clients": [client]})}
+    # Try v3.x
+    try:
+        body = _xray_req(server, "post", f"/panel/api/clients/update/{email}", json=client)
+        if body.get("success"):
+            return
+        raise RuntimeError(f"updateClient failed: {body.get('msg', '')}")
+    except Exception as e:
+        if "404" not in str(e):
+            raise
+    # Fall back to v2.x
+    payload = {"id": server.xpanel_inbound_id, "settings": json.dumps({"clients": [client]})}
+    body = _xray_req(server, "post", f"/panel/api/inbounds/updateClient/{u['uuid']}", json=payload)
+    if not body.get("success"):
+        raise RuntimeError(f"updateClient failed: {body.get('msg', '')}")
 
 
 def _xray_renewal(server, username: str, duration_days: int = None, carry_over_mb: float = 0, pkg=None) -> None:
     u = _xray_get_client(server, username)
     if not u or not u.get("uuid"):
         raise RuntimeError(f"Client {username} not found on server {server.id}")
-    _xray_req(server, "post",
-              f"/panel/api/inbounds/{server.xpanel_inbound_id}/resetClientTraffic/{username}")
-    # new total = package traffic + carry over
+    _xray_reset_traffic(server, username)
     if pkg:
         new_bytes = int(pkg.traffic_amount * (1024**3 if pkg.traffic_unit == "gb" else 1024**2))
     else:
@@ -384,8 +439,7 @@ def _xray_renewal(server, username: str, duration_days: int = None, carry_over_m
     total_bytes = new_bytes + int(carry_over_mb * 1024 * 1024)
     days = int(duration_days or DEFAULT_EXP_DAYS)
     expiry_ms = int((datetime.utcnow() + timedelta(days=days)).timestamp() * 1000)
-    payload = _xray_build_update_payload(server, u, expiryTime=expiry_ms, totalGB=total_bytes)
-    _xray_req(server, "post", f"/panel/api/inbounds/updateClient/{u['uuid']}", json=payload)
+    _xray_update_client(server, u, expiryTime=expiry_ms, totalGB=total_bytes)
 
 
 def _xray_add_traffic(server, username: str, traffic: int, unit: str) -> None:
@@ -394,8 +448,7 @@ def _xray_add_traffic(server, username: str, traffic: int, unit: str) -> None:
         raise RuntimeError(f"Client {username} not found")
     add_bytes = traffic * (1024 ** 3 if unit == "gb" else 1024 ** 2)
     new_total = int(u.get("total", 0) or 0) + add_bytes
-    payload = _xray_build_update_payload(server, u, totalGB=new_total)
-    _xray_req(server, "post", f"/panel/api/inbounds/updateClient/{u['uuid']}", json=payload)
+    _xray_update_client(server, u, totalGB=new_total)
 
 
 def _xray_activate(server, username: str) -> None:
@@ -403,8 +456,7 @@ def _xray_activate(server, username: str) -> None:
         u = _xray_get_client(server, username)
         if not u or not u.get("uuid") or u.get("enable"):
             return
-        payload = _xray_build_update_payload(server, u, enable=True)
-        _xray_req(server, "post", f"/panel/api/inbounds/updateClient/{u['uuid']}", json=payload)
+        _xray_update_client(server, u, enable=True)
     except Exception as e:
         logger.warning("xray_activate error for %s: %s", username, e)
 
