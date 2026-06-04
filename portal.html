@@ -225,17 +225,18 @@ function render(d) {
            </div>`
         : (s.config_text
             ? `<div class="cfg-wrap">
-                 <div class="cfg-lbl">📲 کانفیگ (تپ برای کپی)</div>
-                 <textarea class="cfg-box" rows="2" readonly id="cfg-npv-${i}">${s.config_text}</textarea>
+                 <div class="cfg-lbl">📲 کانفیگ VLESS (تپ برای کپی)</div>
+                 <textarea class="cfg-box" rows="2" readonly id="cfg-npv-${i}" onclick="copyEl('cfg-npv-${i}','cbtn-npv-${i}')">${s.config_text}</textarea>
                  <button class="copy-btn" id="cbtn-npv-${i}" onclick="copyEl('cfg-npv-${i}','cbtn-npv-${i}')">📋 کپی</button>
+                 <div id="qr-npv-${i}" style="display:flex;justify-content:center;margin-top:12px;padding:12px;background:#fff;border-radius:10px"></div>
                </div>`
             : '') +
           (s.config_netmod
             ? `<div class="cfg-wrap" style="margin-top:8px">
                  <div class="cfg-lbl">📲 کانفیگ Netmod (تپ برای کپی)</div>
-                 <textarea class="cfg-box" rows="1" readonly id="cfg-net-${i}">${s.config_netmod}</textarea>
+                 <textarea class="cfg-box" rows="1" readonly id="cfg-net-${i}" onclick="copyEl('cfg-net-${i}','cbtn-net-${i}')">${s.config_netmod}</textarea>
                  <button class="copy-btn" id="cbtn-net-${i}" onclick="copyEl('cfg-net-${i}','cbtn-net-${i}')">📋 کپی Netmod</button>
-                 <div id="qr-net-${i}" style="display:flex;justify-content:center;margin-top:12px;padding:10px;background:#fff;border-radius:8px"></div>
+                 <div id="qr-net-${i}" style="display:flex;justify-content:center;margin-top:12px;padding:12px;background:#fff;border-radius:10px"></div>
                </div>`
             : '');
 
@@ -296,10 +297,17 @@ function render(d) {
 
   // render QR codes
   subs.forEach((s, i) => {
+    if (!d.config_hidden && s.config_text) {
+      const el = document.getElementById(`qr-npv-${i}`);
+      if (el && window.QRCode) {
+        new QRCode(el, {text: s.config_text, width: 200, height: 200,
+          colorDark: "#000", colorLight: "#fff", correctLevel: QRCode.CorrectLevel.M});
+      }
+    }
     if (s.config_netmod) {
       const el = document.getElementById(`qr-net-${i}`);
       if (el && window.QRCode) {
-        new QRCode(el, {text: s.config_netmod, width: 180, height: 180,
+        new QRCode(el, {text: s.config_netmod, width: 200, height: 200,
           colorDark: "#000", colorLight: "#fff", correctLevel: QRCode.CorrectLevel.M});
       }
     }
