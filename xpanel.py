@@ -253,6 +253,15 @@ def _xray_do_login(server) -> requests.Session:
     if not body.get("success"):
         raise RuntimeError(f"3X-UI login failed: {body.get('msg', 'unknown')}")
 
+    # Store CSRF token on the session so _xray_req can attach it to every POST
+    post_csrf = csrf_token
+    for _cname in ("XSRF-TOKEN", "csrf_token", "X-CSRF-TOKEN"):
+        _cv = session.cookies.get(_cname)
+        if _cv:
+            post_csrf = _cv
+            break
+    session._xray_csrf_token = post_csrf or ""
+
     return session
 
 
@@ -267,16 +276,27 @@ def _xray_session(server) -> requests.Session:
 
 
 def _xray_req(server, method: str, path: str, **kwargs) -> dict:
-    """Make authenticated request; re-login once on 401."""
+    """Make authenticated request; re-login once on 401/403."""
     url = f"{_xray_base(server)}{path}"
     verify = _ssl_verify(server)
     for attempt in range(2):
         sess = _xray_session(server)
+        req_kwargs = dict(kwargs)
+        headers = dict(req_kwargs.pop("headers", {}))
+        if method.lower() in ("post", "put", "delete", "patch"):
+            csrf = getattr(sess, "_xray_csrf_token", None)
+            for _cname in ("XSRF-TOKEN", "csrf_token"):
+                _cv = sess.cookies.get(_cname)
+                if _cv:
+                    csrf = _cv
+                    break
+            if csrf:
+                headers.setdefault("X-Csrf-Token", csrf)
         try:
-            resp = getattr(sess, method)(url, timeout=25, verify=verify, **kwargs)
+            resp = getattr(sess, method)(url, timeout=25, verify=verify, headers=headers, **req_kwargs)
         except requests.RequestException as exc:
             raise RuntimeError(f"3X-UI request error: {exc}")
-        if resp.status_code == 401 and attempt == 0:
+        if resp.status_code in (401, 403) and attempt == 0:
             with _xray_lock:
                 _xray_sessions.pop(server.id, None)
             continue
