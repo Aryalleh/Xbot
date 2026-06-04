@@ -275,7 +275,7 @@ def _xray_session(server) -> requests.Session:
         return sess
 
 
-def _xray_req(server, method: str, path: str, **kwargs) -> dict:
+def _xray_req(server, method: str, path: str, timeout: int = 25, **kwargs) -> dict:
     """Make authenticated request; re-login once on 401/403."""
     url = f"{_xray_base(server)}{path}"
     verify = _ssl_verify(server)
@@ -293,7 +293,7 @@ def _xray_req(server, method: str, path: str, **kwargs) -> dict:
             if csrf:
                 headers.setdefault("X-Csrf-Token", csrf)
         try:
-            resp = getattr(sess, method)(url, timeout=25, verify=verify, headers=headers, **req_kwargs)
+            resp = getattr(sess, method)(url, timeout=timeout, verify=verify, headers=headers, **req_kwargs)
         except requests.RequestException as exc:
             raise RuntimeError(f"3X-UI request error: {exc}")
         if resp.status_code in (401, 403) and attempt == 0:
@@ -308,18 +308,18 @@ def _xray_req(server, method: str, path: str, **kwargs) -> dict:
     raise RuntimeError("3X-UI auth failed after retry")
 
 
-def _xray_get_client(server, username: str) -> Optional[dict]:
+def _xray_get_client(server, username: str, timeout: int = 8) -> Optional[dict]:
     """Fetch clientStats by email. Returns the stats dict or None."""
     try:
         try:
-            body = _xray_req(server, "get", f"/panel/api/clients/traffic/{username}")
+            body = _xray_req(server, "get", f"/panel/api/clients/traffic/{username}", timeout=timeout)
             obj = body.get("obj")
             return (obj if isinstance(obj, dict) else (obj[0] if obj else None)) if obj else None
         except Exception as e:
             if "404" not in str(e):
                 raise
         # v3.x endpoint not found — fall back to v2.x
-        body = _xray_req(server, "get", f"/panel/api/inbounds/getClientTraffics/{username}")
+        body = _xray_req(server, "get", f"/panel/api/inbounds/getClientTraffics/{username}", timeout=timeout)
         obj = body.get("obj")
         return (obj if isinstance(obj, dict) else (obj[0] if obj else None)) if obj else None
     except Exception as e:
