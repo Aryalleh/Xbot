@@ -419,8 +419,10 @@ def kb_confirm():
 
 
 def kb_phone():
-    return ReplyKeyboardMarkup([[KeyboardButton("📱 ارسال شماره تماس", request_contact=True)]],
-                               resize_keyboard=True, one_time_keyboard=True)
+    return ReplyKeyboardMarkup(
+        [[KeyboardButton("📱 ارسال شماره تماس", request_contact=True)],
+         [KeyboardButton("رد کردن ⏭")]],
+        resize_keyboard=True, one_time_keyboard=True)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -713,17 +715,18 @@ async def cb_confirm(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
     if customer["phone"]:
         return await _go_to_payment(update, ctx, q.message)
 
-    await q.edit_message_text("📱 شماره تماست رو ارسال کن:", reply_markup=None)
+    await q.edit_message_text("📱 شماره تماست رو ارسال کن (اختیاری — فقط برای پشتیبانی استفاده میشه):", reply_markup=None)
     await q.message.reply_text("👇", reply_markup=kb_phone())
     return ST_PHONE
 
 
 async def get_phone(update: Update, ctx: ContextTypes.DEFAULT_TYPE) -> int:
-    if not (update.message and update.message.contact):
-        await update.message.reply_text("⚠️ از دکمه «ارسال شماره تماس» استفاده کن.", reply_markup=kb_phone())
-        return ST_PHONE
-    upsert_customer(update.effective_user, phone=update.message.contact.phone_number)
-    await update.message.reply_text("✅ شماره ثبت شد.", reply_markup=ReplyKeyboardRemove())
+    if update.message and update.message.contact:
+        upsert_customer(update.effective_user, phone=update.message.contact.phone_number)
+        await update.message.reply_text("✅ شماره ثبت شد.", reply_markup=ReplyKeyboardRemove())
+    else:
+        # user skipped — proceed without phone
+        await update.message.reply_text("⏭ رد شد.", reply_markup=ReplyKeyboardRemove())
     return await _go_to_payment(update, ctx, update.message)
 
 
