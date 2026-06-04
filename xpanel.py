@@ -328,8 +328,15 @@ def _xray_get_client(server, username: str) -> Optional[dict]:
 
 
 def _xray_get_inbound(server) -> dict:
-    body = _xray_req(server, "get", f"/panel/api/inbounds/get/{server.xpanel_inbound_id}")
-    return body.get("obj") or {}
+    try:
+        body = _xray_req(server, "get", f"/panel/api/inbounds/get/{server.xpanel_inbound_id}")
+        result = body.get("obj") or {}
+        if not result:
+            logger.warning("xray_get_inbound: empty obj for server %s body=%s", server.id, str(body)[:200])
+        return result
+    except Exception as e:
+        logger.warning("xray_get_inbound error server %s: %s", server.id, e)
+        return {}
 
 
 def _xray_adduser(server, pkg, username: str, customer) -> str:
@@ -498,9 +505,13 @@ def _xray_build_config(server, username: str, client_uuid: str) -> str:
     """Build a shareable proxy link from inbound settings."""
     try:
         inbound = _xray_get_inbound(server)
+        if not inbound:
+            logger.warning("xray_build_config: empty inbound for server %s", server.id)
         port = inbound.get("port", 443)
         protocol = inbound.get("protocol", "vless")
-        stream = json.loads(inbound.get("streamSettings") or "{}")
+        # streamSettings may be a JSON string (v2.x) or already a dict (v3.x)
+        raw_stream = inbound.get("streamSettings") or "{}"
+        stream = raw_stream if isinstance(raw_stream, dict) else json.loads(raw_stream)
         network = stream.get("network", "tcp")
         security = stream.get("security", "none")
 
