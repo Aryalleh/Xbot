@@ -357,10 +357,10 @@ def _xray_adduser(server, pkg, username: str, customer) -> str:
                 return existing["uuid"]
         return None
 
-    # Try v3.x path first — same {id, settings} body format, JSON-encoded
+    # Try v3.x path: {"client": {...}, "inboundIds": [...]}
     try:
         body = _xray_req(server, "post", "/panel/api/clients/add",
-                         json={"id": int(server.xpanel_inbound_id), "settings": settings_str})
+                         json={"client": client, "inboundIds": [int(server.xpanel_inbound_id)]})
         if body.get("success"):
             return client_uuid
         msg = body.get("msg", "")
