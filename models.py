@@ -249,6 +249,7 @@ def init_db() -> None:
             "ALTER TABLE payments ADD COLUMN sms_amount INTEGER",
             "ALTER TABLE packages ADD COLUMN duration_days INTEGER NOT NULL DEFAULT 30",
             "ALTER TABLE orders ADD COLUMN renew_notified INTEGER NOT NULL DEFAULT 0",
+            "ALTER TABLE customers ADD COLUMN portal_token TEXT",
         ]:
             try:
                 cur.execute(stmt)
@@ -339,9 +340,10 @@ def upsert_customer(tg_user, phone: Optional[str] = None) -> int:
         row = conn.execute("SELECT id,portal_token FROM customers WHERE telegram_id=?", (tg_user.id,)).fetchone()
         ts = now_iso()
         if row:
+            new_token = row["portal_token"] or generate_portal_token()
             conn.execute(
-                "UPDATE customers SET telegram_username=?,full_name=?,phone=COALESCE(?,phone),updated_at=? WHERE telegram_id=?",
-                (tg_user.username, full_name, phone, ts, tg_user.id),
+                "UPDATE customers SET telegram_username=?,full_name=?,phone=COALESCE(?,phone),portal_token=COALESCE(portal_token,?),updated_at=? WHERE telegram_id=?",
+                (tg_user.username, full_name, phone, new_token, ts, tg_user.id),
             )
             cid = int(row["id"])
         else:
