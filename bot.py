@@ -187,13 +187,14 @@ async def do_provision(bot, payment_row, donor_name: str = "", donated_amount: f
             await bot.send_message(tg_id, f"✅ پرداخت تأیید شد!\nمبلغ: {amount_str}\nسرور: {server.flag} {server.name}")
             if order_type == "add_traffic":
                 await bot.send_message(tg_id, "➕ حجم اضافه شد و تاریخ تمدید شد. کانفیگ تغییری نکرده.")
-            elif config_text:
+            c = get_customer_by_tg(tg_id)
+            portal_url = f"{_portal_base_url()}/portal/{c['portal_token']}" if c and c.get("portal_token") else None
+            if config_text and get_setting("link_enabled", "1") != "1":
                 await _send_both_configs(bot, tg_id, config_text, config_netmod_val or "", server=server)
-                c = get_customer_by_tg(tg_id)
-                if c and c["portal_token"]:
-                    portal_url = f"{_portal_base_url()}/portal/{c['portal_token']}"
-                    await bot.send_message(tg_id,
-                        f"🌐 پورتال شخصی شما:\n{portal_url}\n\nمی‌تونی مصرف و اشتراک‌هات رو اونجا ببینی.")
+            if portal_url:
+                await bot.send_message(tg_id,
+                    f"🌐 برای دریافت کانفیگ، لینک زیر رو *در مرورگر* باز کن:\n{portal_url}",
+                    parse_mode="Markdown")
     except Exception as e:
         logger.warning("notify user failed: %s", e)
 
