@@ -242,18 +242,13 @@ async def handle_dashboard_data(request: web.Request) -> web.Response:
 
     servers = {s.id: s for s in get_all_servers(active_only=False)}
 
-    # fetch xpanel info in parallel
+    # build user list from DB only — no live xpanel calls
     def _get_user_info(u):
         sv = servers.get(u["server_id"])
         if not sv:
             return None
-        info     = xpanel.get_user(sv, u["xpanel_username"]) or {}
-        total_mb = float(info.get("total_mb", 0) or 0)
-        used_mb  = float(info.get("used_mb", 0) or 0)
-        if total_mb < 0.0001:
-            t = float(u["traffic_amount"])
-            total_mb = t if u["traffic_unit"] == "mb" else t * 1024
-        remaining_mb = max(0.0, round(total_mb - used_mb, 2))
+        t = float(u["traffic_amount"])
+        total_mb = t if u["traffic_unit"] == "mb" else t * 1024
         return {
             "name":         u["full_name"],
             "username":     u["telegram_username"] or "—",
@@ -264,24 +259,13 @@ async def handle_dashboard_data(request: web.Request) -> web.Response:
             "server_id":    u["server_id"],
             "server_name":  sv.name,
             "server_flag":  sv.flag,
-            "expdate":      info.get("expdate", "—"),
-            "used_mb":      used_mb,
+            "expdate":      "—",
+            "used_mb":      0,
             "total_mb":     total_mb,
-            "remaining_mb": remaining_mb,
+            "remaining_mb": total_mb,
         }
 
-    loop = asyncio.get_event_loop()
-    with ThreadPoolExecutor(max_workers=16) as pool:
-        futs = [loop.run_in_executor(pool, _get_user_info, u) for u in users]
-        users_info = list(await asyncio.gather(*futs))
-    users_info = [u for u in users_info if u]
-
-    # online counts per server
-    online_counts = {}
-    for sv in servers.values():
-        if not sv.is_active:
-            continue
-        online_counts[sv.id] = xpanel.online_count(sv)
+    users_info = [r for r in (_get_user_info(u) for u in users) if r]
 
     return web.json_response({
         "ok": True,
@@ -291,7 +275,7 @@ async def handle_dashboard_data(request: web.Request) -> web.Response:
         "users":         users_info,
         "pending":       [dict(r) for r in pending],
         "servers":       [s.to_dict() for s in servers.values()],
-        "online_counts": online_counts,
+        "online_counts": {},
     })
 
 
@@ -477,66 +461,49 @@ async def handle_portal_data(request: web.Request) -> web.Response:
         sv = servers.get(o["server_id"])
         if not sv:
             return None
-        info     = xpanel.get_user(sv, o["xpanel_username"]) or {}
-        total_mb = float(info.get("total_mb", 0) or 0)
-        used_mb  = float(info.get("used_mb", 0) or 0)
-        if total_mb < 0.0001:
-            t = float(o["traffic_amount"])
-            total_mb = t if o["traffic_unit"] == "mb" else t * 1024
-        remaining_mb = max(0.0, round(total_mb - used_mb, 2))
-        pct = min(100, int((used_mb / total_mb * 100))) if total_mb else 0
+        t = float(o["traffic_amount"])
+        total_mb = t if o["traffic_unit"] == "mb" else t * 1024
         duration_days = int(o["duration_days"] or 30)
-        expdate = info.get("expdate", "—")
 
-        # renewal eligibility: ≥75% used OR ≤25% time remaining
-        can_renew_traffic = pct >= 75
-        can_renew_time    = False
-        days_left         = None
-        if expdate and expdate != "—":
-            try:
-                exp_dt    = datetime.fromisoformat(expdate.split("T")[0])
-                days_left = (exp_dt - datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)).days
-                can_renew_time = days_left <= int(duration_days * 0.25)
-            except Exception:
-                pass
-        can_renew = can_renew_traffic or can_renew_time
+        # estimate expiry from purchase date + package duration
+        expdate = "—"
+        days_left = None
+        try:
+            created = datetime.fromisoformat(o["created_at"].replace("Z", "").split("T")[0])
+            exp_dt  = created + timedelta(days=duration_days)
+            expdate = exp_dt.strftime("%Y-%m-%d")
+            days_left = (exp_dt - datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)).days
+        except Exception:
+            pass
 
-        if can_renew:
-            renew_msg = ""
-        else:
-            threshold_days = int(duration_days * 0.25)
-            remaining_pct  = 100 - pct
-            msg_parts = [f"باید کمتر از ۲۵٪ حجم باقی بمونه (الان {remaining_pct}٪ مونده)"]
-            if days_left is not None:
-                msg_parts.append(f"یا کمتر از {threshold_days} روز به انقضا مونده باشه (الان {days_left} روز)")
-            else:
-                msg_parts.append(f"یا کمتر از {threshold_days} روز به انقضا مونده باشه")
-            renew_msg = "⏳ تمدید هنوز ممکن نیست — " + " ".join(msg_parts)
+        can_renew_time = days_left is not None and days_left <= int(duration_days * 0.25)
+        can_renew = can_renew_time  # traffic unknown until refreshed
+
+        renew_msg = "" if can_renew else (
+            f"⏳ تمدید هنوز ممکن نیست — کمتر از {int(duration_days * 0.25)} روز مانده باشه"
+            + (f" (الان {days_left} روز)" if days_left is not None else "")
+        )
 
         return {
-            "order_id":      o["id"],
-            "server_id":     o["server_id"],
-            "server_name":   o["server_name"],
-            "server_flag":   o["flag"],
+            "order_id":        o["id"],
+            "server_id":       o["server_id"],
+            "server_name":     o["server_name"],
+            "server_flag":     o["flag"],
             "server_location": o["location"],
-            "pkg_name":      o["pkg_name"],
-            "config_text":   "" if hide_config else (o["config_text"] or ""),
-            "config_netmod": "" if hide_config else (o["config_netmod"] or "" if "config_netmod" in o.keys() else ""),
-            "expdate":       expdate,
-            "total_mb":      total_mb,
-            "used_mb":       used_mb,
-            "remaining_mb":  remaining_mb,
-            "used_pct":      pct,
-            "created_at":    o["created_at"],
-            "can_renew":     can_renew,
-            "renew_msg":     renew_msg,
+            "pkg_name":        o["pkg_name"],
+            "config_text":     "" if hide_config else (o["config_text"] or ""),
+            "config_netmod":   "" if hide_config else (o["config_netmod"] or "" if "config_netmod" in o.keys() else ""),
+            "expdate":         expdate,
+            "total_mb":        total_mb,
+            "used_mb":         0,
+            "remaining_mb":    total_mb,
+            "used_pct":        0,
+            "created_at":      o["created_at"],
+            "can_renew":       can_renew,
+            "renew_msg":       renew_msg,
         }
 
-    loop = asyncio.get_event_loop()
-    with ThreadPoolExecutor(max_workers=8) as pool:
-        futs = [loop.run_in_executor(pool, _enrich, o) for o in orders]
-        subs = list(await asyncio.gather(*futs))
-    subs = [s for s in subs if s]
+    subs = [s for s in (_enrich(o) for o in orders) if s]
 
     return web.json_response({
         "ok": True,
@@ -704,6 +671,45 @@ async def handle_portal_payment_status(request: web.Request) -> web.Response:
     if not pay:
         return web.json_response({"ok": False, "error": "not found"}, status=404)
     return web.json_response({"ok": True, "status": pay["status"], "expires_at": pay["expires_at"]})
+
+
+async def handle_portal_order_stats(request: web.Request) -> web.Response:
+    """GET /api/portal/{token}/stats/{order_id} — on-demand live stats from xpanel"""
+    token    = request.match_info.get("token", "")
+    customer = get_customer_by_token(token)
+    if not customer:
+        return web.json_response({"ok": False, "error": "invalid token"}, status=404)
+    order_id = int(request.match_info.get("order_id", 0))
+    with closing(get_conn()) as conn:
+        o = conn.execute(
+            """SELECT o.xpanel_username, o.server_id, o.traffic_amount, o.traffic_unit
+               FROM orders o WHERE o.id=? AND o.customer_id=? AND o.status='active'""",
+            (order_id, customer["id"]),
+        ).fetchone()
+    if not o:
+        return web.json_response({"ok": False, "error": "not found"}, status=404)
+    sv = next((s for s in get_all_servers() if s.id == o["server_id"]), None)
+    if not sv:
+        return web.json_response({"ok": False, "error": "server not found"}, status=404)
+
+    loop = asyncio.get_event_loop()
+    with ThreadPoolExecutor(max_workers=1) as pool:
+        info = await loop.run_in_executor(pool, xpanel.get_user, sv, o["xpanel_username"])
+    info = info or {}
+
+    t = float(o["traffic_amount"])
+    total_mb = float(info.get("total_mb", 0) or 0) or (t if o["traffic_unit"] == "mb" else t * 1024)
+    used_mb  = float(info.get("used_mb", 0) or 0)
+    remaining_mb = max(0.0, round(total_mb - used_mb, 2))
+    pct = min(100, int(used_mb / total_mb * 100)) if total_mb else 0
+    return web.json_response({
+        "ok":           True,
+        "total_mb":     total_mb,
+        "used_mb":      used_mb,
+        "remaining_mb": remaining_mb,
+        "used_pct":     pct,
+        "expdate":      info.get("expdate", "—"),
+    })
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -905,6 +911,7 @@ async def run_web_server(bot_app=None) -> None:
     app.router.add_get ("/api/portal/{token}/packages/{server_id}",         handle_portal_packages)
     app.router.add_post("/api/portal/{token}/payment",                      handle_portal_initiate_payment)
     app.router.add_get ("/api/portal/{token}/payment/{payment_id}/status",  handle_portal_payment_status)
+    app.router.add_get ("/api/portal/{token}/stats/{order_id}",             handle_portal_order_stats)
     # HTML pages
     app.router.add_get("/dashboard",         handle_dashboard_html)
     app.router.add_get("/portal/{token}",    handle_portal_html)

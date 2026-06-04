@@ -48,6 +48,10 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 /* add-traffic button */
 .add-btn{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:14px;padding:10px;border-radius:10px;border:1px solid #38bdf840;background:linear-gradient(135deg,#38bdf810,#818cf810);color:var(--acc);font-family:var(--f);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s}
 .add-btn:hover{background:linear-gradient(135deg,#38bdf825,#818cf825);border-color:#38bdf870;transform:translateY(-1px)}
+/* refresh stats button */
+.ref-btn{display:flex;align-items:center;justify-content:center;gap:5px;width:100%;margin-top:8px;padding:8px;border-radius:8px;border:1px solid var(--bd);background:transparent;color:var(--mut);font-family:var(--f);font-size:12px;cursor:pointer;transition:all .2s}
+.ref-btn:hover{color:var(--acc);border-color:#38bdf840}
+.ref-btn.loading{opacity:.6;pointer-events:none}
 /* renew blocked notice */
 .renew-blocked{margin-top:14px;padding:11px 14px;border-radius:10px;border:1px solid #fbbf2430;background:#fbbf2408;display:flex;align-items:flex-start;gap:8px;font-size:12px;color:#fbbf24;line-height:1.5}
 /* empty/loading/error */
@@ -255,23 +259,23 @@ function render(d) {
 
         <div class="tbar-wrap">
           <div class="tbar-labels">
-            <span>باقی‌مانده: <b>${fmb(s.remaining_mb)}</b></span>
-            <span>کل: <b>${fmb(s.total_mb)}</b></span>
+            <span id="lbl-remain-${i}">باقی‌مانده: <b>${fmb(s.remaining_mb)}</b></span>
+            <span id="lbl-total-${i}">کل: <b>${fmb(s.total_mb)}</b></span>
           </div>
           <div class="tbar-bg">
-            <div class="tbar-fill ${fillClass}" style="width:${pct}%"></div>
+            <div class="tbar-fill ${fillClass}" id="fill-${i}" style="width:${pct}%"></div>
           </div>
-          <div class="tbar-pct">${pct.toLocaleString('fa-IR')}٪ مصرف شده</div>
+          <div class="tbar-pct" id="lbl-pct-${i}">${pct.toLocaleString('fa-IR')}٪ مصرف شده</div>
         </div>
 
         <div class="info-grid">
           <div class="info-item">
             <div class="info-lbl">⏳ زمان باقی‌مانده</div>
-            <div class="info-val">${daysLeft}</div>
+            <div class="info-val" id="days-val-${i}">${daysLeft}</div>
           </div>
           <div class="info-item">
             <div class="info-lbl">📅 تاریخ انقضا</div>
-            <div class="info-val">${expStr}</div>
+            <div class="info-val" id="exp-val-${i}">${expStr}</div>
           </div>
           <div class="info-item">
             <div class="info-lbl">🕐 تاریخ خرید</div>
@@ -284,6 +288,8 @@ function render(d) {
         </div>
 
         ${cfgHtml}
+
+        <button class="ref-btn" id="ref-${i}" onclick="refreshStats(${s.order_id},${i})">🔄 بروزرسانی آمار از سرور</button>
 
         ${s.can_renew !== false
           ? `<button class="add-btn" onclick="openAddTraffic(${s.order_id}, ${serverId})">➕ افزودن حجم / تمدید</button>`
@@ -564,6 +570,51 @@ function cancelPayment() {
   if (_countdownTimer) { clearInterval(_countdownTimer); _countdownTimer = null; }
   _currentPayId = null;
   document.getElementById('pay-modal').style.display = 'none';
+}
+
+async function refreshStats(orderId, idx) {
+  const btn = document.getElementById(`ref-${idx}`);
+  if (!btn) return;
+  btn.classList.add('loading');
+  btn.textContent = '⏳ در حال دریافت...';
+  try {
+    const r = await fetch(`/api/portal/${token}/stats/${orderId}`);
+    const d = await r.json();
+    if (!d.ok) throw new Error('failed');
+
+    const pct = d.used_pct || 0;
+    const fillClass = pct > 85 ? 'danger' : pct > 60 ? 'warn' : '';
+
+    // update progress bar
+    const fill = document.getElementById(`fill-${idx}`);
+    if (fill) { fill.style.width = `${pct}%`; fill.className = `tbar-fill ${fillClass}`; }
+
+    // update labels
+    const lblRemain = document.getElementById(`lbl-remain-${idx}`);
+    const lblTotal  = document.getElementById(`lbl-total-${idx}`);
+    const lblPct    = document.getElementById(`lbl-pct-${idx}`);
+    if (lblRemain) lblRemain.innerHTML = `باقی‌مانده: <b>${fmb(d.remaining_mb)}</b>`;
+    if (lblTotal)  lblTotal.innerHTML  = `کل: <b>${fmb(d.total_mb)}</b>`;
+    if (lblPct)    lblPct.textContent  = `${pct.toLocaleString('fa-IR')}٪ مصرف شده`;
+
+    // update expdate
+    const expVal  = document.getElementById(`exp-val-${idx}`);
+    const daysVal = document.getElementById(`days-val-${idx}`);
+    if (expVal && d.expdate && d.expdate !== '—') expVal.textContent = d.expdate;
+    if (daysVal && d.expdate && d.expdate !== '—') {
+      try {
+        const diff = Math.ceil((new Date(d.expdate) - new Date()) / 86400000);
+        daysVal.textContent = diff >= 0 ? `${diff.toLocaleString('fa-IR')} روز` : '⛔ منقضی';
+      } catch(e) {}
+    }
+
+    btn.textContent = '✅ آمار بروز شد';
+    setTimeout(() => { btn.classList.remove('loading'); btn.textContent = '🔄 بروزرسانی آمار از سرور'; }, 3000);
+  } catch(e) {
+    btn.classList.remove('loading');
+    btn.textContent = '⚠️ خطا — دوباره امتحان کن';
+    setTimeout(() => { btn.textContent = '🔄 بروزرسانی آمار از سرور'; }, 3000);
+  }
 }
 
 load();
