@@ -170,6 +170,7 @@ let _pkgOrderId = null;
 let _pkgServerId = null;
 let _activeMethods = {};
 let _activeTab = null;
+let _successShown = false;
 
 // ── Page load ──────────────────────────────────────────────────────────────
 
@@ -549,6 +550,8 @@ function stopPolling() {
 // ── Success state ──────────────────────────────────────────────────────────
 
 function showSuccess() {
+  if (_successShown) return;
+  _successShown = true;
   if (_countdownTimer) { clearInterval(_countdownTimer); _countdownTimer = null; }
   const overlay = document.getElementById('success-overlay');
   overlay.style.display = 'flex';
@@ -572,6 +575,7 @@ function cancelPayment() {
   stopPolling();
   if (_countdownTimer) { clearInterval(_countdownTimer); _countdownTimer = null; }
   _currentPayId = null;
+  _successShown = false;
   document.getElementById('pay-modal').style.display = 'none';
 }
 

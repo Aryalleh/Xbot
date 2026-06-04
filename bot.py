@@ -130,13 +130,16 @@ async def do_provision(bot, payment_row, donor_name: str = "", donated_amount: f
         pkg = get_package(_order["pkg_id"])
 
         # برای renewal/add_traffic username و password واقعی رو از order فعال بخون
+        stored_uuid = None
         if order_type in ("renewal", "add_traffic"):
             existing = get_active_order_on_server(tg_id, server_id)
             if existing and existing["xpanel_username"]:
                 username = existing["xpanel_username"]
+                stored_uuid = existing["xpanel_password"] or None
 
         if order_type == "add_traffic":
-            xpanel.add_traffic(server, username, _order["traffic_amount"], _order["traffic_unit"])
+            xpanel.add_traffic(server, username, _order["traffic_amount"], _order["traffic_unit"],
+                               client_uuid=stored_uuid)
             xpanel.activate(server, username)
             with closing(__import__("models").get_conn()) as conn:
                 conn.execute("UPDATE orders SET status='active',updated_at=? WHERE id=?", (now_iso(), order_id))
@@ -149,7 +152,7 @@ async def do_provision(bot, payment_row, donor_name: str = "", donated_amount: f
                 pre_used    = float(user_info.get("used_mb",  0) or 0)
                 carry_over  = max(0.0, pre_total - pre_used)
                 xpanel.renewal(server, username, getattr(pkg, "duration_days", None),
-                               carry_over_mb=carry_over, pkg=pkg)
+                               carry_over_mb=carry_over, pkg=pkg, client_uuid=stored_uuid)
                 active_pass = get_stored_password(tg_id, server_id) or new_pass
             else:
                 active_pass = xpanel.adduser(server, pkg, username, new_pass, _customer)

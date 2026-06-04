@@ -458,10 +458,17 @@ def _xray_update_client(server, u: dict, **overrides) -> None:
         raise RuntimeError(f"updateClient failed: {body.get('msg', '')}")
 
 
-def _xray_renewal(server, username: str, duration_days: int = None, carry_over_mb: float = 0, pkg=None) -> None:
+def _xray_renewal(server, username: str, duration_days: int = None, carry_over_mb: float = 0, pkg=None, client_uuid: str = None) -> None:
     u = _xray_get_client(server, username)
     if not u or not u.get("uuid"):
-        raise RuntimeError(f"Client {username} not found on server {server.id}")
+        if client_uuid:
+            # panel slow/unreachable but UUID is known from DB — proceed without carry_over
+            logger.warning("xray_renewal: get_client failed for %s, using stored uuid fallback", username)
+            u = {"uuid": client_uuid, "email": username, "flow": "", "limitIp": 0,
+                 "total": 0, "expiryTime": 0, "enable": True, "tgId": 0, "subId": "", "reset": 0, "comment": ""}
+            carry_over_mb = 0
+        else:
+            raise RuntimeError(f"Client {username} not found on server {server.id}")
     _xray_reset_traffic(server, username)
     if pkg:
         new_bytes = int(pkg.traffic_amount * (1024**3 if pkg.traffic_unit == "gb" else 1024**2))
@@ -473,10 +480,15 @@ def _xray_renewal(server, username: str, duration_days: int = None, carry_over_m
     _xray_update_client(server, u, expiryTime=expiry_ms, totalGB=total_bytes)
 
 
-def _xray_add_traffic(server, username: str, traffic: int, unit: str) -> None:
+def _xray_add_traffic(server, username: str, traffic: int, unit: str, client_uuid: str = None) -> None:
     u = _xray_get_client(server, username)
     if not u or not u.get("uuid"):
-        raise RuntimeError(f"Client {username} not found")
+        if client_uuid:
+            logger.warning("xray_add_traffic: get_client failed for %s, using stored uuid fallback", username)
+            u = {"uuid": client_uuid, "email": username, "flow": "", "limitIp": 0,
+                 "total": 0, "expiryTime": 0, "enable": True, "tgId": 0, "subId": "", "reset": 0, "comment": ""}
+        else:
+            raise RuntimeError(f"Client {username} not found")
     add_bytes = traffic * (1024 ** 3 if unit == "gb" else 1024 ** 2)
     new_total = int(u.get("total", 0) or 0) + add_bytes
     _xray_update_client(server, u, totalGB=new_total)
@@ -580,16 +592,16 @@ def get_user(server, username: str) -> Optional[dict]:
     return _ssh_get_user(server, username)
 
 
-def renewal(server, username: str, duration_days: int = None, carry_over_mb: float = 0, pkg=None) -> None:
+def renewal(server, username: str, duration_days: int = None, carry_over_mb: float = 0, pkg=None, client_uuid: str = None) -> None:
     if _is_xray(server):
-        _xray_renewal(server, username, duration_days, carry_over_mb, pkg)
+        _xray_renewal(server, username, duration_days, carry_over_mb, pkg, client_uuid=client_uuid)
     else:
         _ssh_renewal(server, username, duration_days, carry_over_mb, pkg)
 
 
-def add_traffic(server, username: str, traffic: int, unit: str) -> None:
+def add_traffic(server, username: str, traffic: int, unit: str, client_uuid: str = None) -> None:
     if _is_xray(server):
-        _xray_add_traffic(server, username, traffic, unit)
+        _xray_add_traffic(server, username, traffic, unit, client_uuid=client_uuid)
     else:
         _ssh_add_traffic(server, username, traffic, unit)
 
