@@ -337,14 +337,16 @@ def _xray_adduser(server, pkg, username: str, customer) -> str:
     days = int(getattr(pkg, "duration_days", None) or DEFAULT_EXP_DAYS)
     expiry_ms = int((datetime.utcnow() + timedelta(days=days)).timestamp() * 1000)
     total_bytes = pkg.traffic_amount * (1024 ** 3 if pkg.traffic_unit == "gb" else 1024 ** 2)
-    tg_id = str(customer.get("telegram_id", "") if isinstance(customer, dict) else getattr(customer, "telegram_id", ""))
+    tg_id_raw = customer.get("telegram_id", "") if isinstance(customer, dict) else getattr(customer, "telegram_id", "")
+    tg_id_int = int(tg_id_raw) if tg_id_raw else 0
+    tg_id_str = str(tg_id_raw) if tg_id_raw else ""
     # Use tg_id as email identifier; fall back to username if tg_id is unavailable
-    email = tg_id if tg_id else username
+    email = tg_id_str if tg_id_str else username
     client = {
         "id": client_uuid, "flow": "",
         "email": email, "limitIp": 0,
         "totalGB": total_bytes, "expiryTime": expiry_ms,
-        "enable": True, "tgId": tg_id,
+        "enable": True, "tgId": tg_id_int,
         "subId": "", "reset": 0,
         "comment": f"pkg={pkg.name}",
     }
@@ -429,7 +431,7 @@ def _xray_update_client(server, u: dict, **overrides) -> None:
         "totalGB": int(u.get("total", 0) or 0),
         "expiryTime": u.get("expiryTime", 0),
         "enable": True,
-        "tgId": str(u.get("tgId", "")), "subId": u.get("subId", ""), "reset": 0,
+        "tgId": int(u.get("tgId", 0) or 0), "subId": u.get("subId", ""), "reset": 0,
         "comment": u.get("comment", ""),
     }
     client.update(overrides)
