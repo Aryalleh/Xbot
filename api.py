@@ -272,7 +272,8 @@ async def handle_dashboard_data(request: web.Request) -> web.Response:
 
     loop = asyncio.get_event_loop()
     with ThreadPoolExecutor(max_workers=16) as pool:
-        users_info = list(await loop.run_in_executor(pool, lambda: [_get_user_info(u) for u in users]))
+        futs = [loop.run_in_executor(pool, _get_user_info, u) for u in users]
+        users_info = list(await asyncio.gather(*futs))
     users_info = [u for u in users_info if u]
 
     # online counts per server
@@ -533,7 +534,8 @@ async def handle_portal_data(request: web.Request) -> web.Response:
 
     loop = asyncio.get_event_loop()
     with ThreadPoolExecutor(max_workers=8) as pool:
-        subs = list(await loop.run_in_executor(pool, lambda: [_enrich(o) for o in orders]))
+        futs = [loop.run_in_executor(pool, _enrich, o) for o in orders]
+        subs = list(await asyncio.gather(*futs))
     subs = [s for s in subs if s]
 
     return web.json_response({
