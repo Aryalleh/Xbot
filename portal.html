@@ -182,6 +182,10 @@ async function load() {
       return;
     }
     render(d);
+    // auto-fetch live stats for all subs in background
+    (d.subscriptions || []).forEach((s, i) => {
+      refreshStats(s.order_id, i);
+    });
   } catch(e) {
     document.getElementById('content').innerHTML = `<div class="err-box"><div style="font-size:48px;margin-bottom:16px">⚠️</div><div>خطای اتصال</div></div>`;
   }
