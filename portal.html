@@ -184,7 +184,7 @@ async function load() {
     render(d);
     // auto-fetch live stats for all subs in background
     (d.subscriptions || []).forEach((s, i) => {
-      refreshStats(s.order_id, i);
+      refreshStats(s.order_id, i, s.duration_days || 30);
     });
   } catch(e) {
     document.getElementById('content').innerHTML = `<div class="err-box"><div style="font-size:48px;margin-bottom:16px">⚠️</div><div>خطای اتصال</div></div>`;
@@ -293,12 +293,11 @@ function render(d) {
 
         ${cfgHtml}
 
-        <button class="ref-btn" id="ref-${i}" onclick="refreshStats(${s.order_id},${i})">🔄 بروزرسانی آمار از سرور</button>
+        <button class="ref-btn" id="ref-${i}" onclick="refreshStats(${s.order_id},${i},${s.duration_days||30})">🔄 بروزرسانی آمار از سرور</button>
 
-        ${s.can_renew !== false
-          ? `<button class="add-btn" onclick="openAddTraffic(${s.order_id}, ${serverId})">➕ افزودن حجم / تمدید</button>`
-          : `<div class="renew-blocked"><span>🔒</span><span>${s.renew_msg || 'تمدید هنوز ممکن نیست'}</span></div>`
-        }
+        <div id="renew-area-${i}">
+          <button class="add-btn" onclick="openAddTraffic(${s.order_id}, ${serverId})">➕ افزودن حجم / تمدید</button>
+        </div>
       </div>`;
     });
   }
@@ -576,7 +575,7 @@ function cancelPayment() {
   document.getElementById('pay-modal').style.display = 'none';
 }
 
-async function refreshStats(orderId, idx) {
+async function refreshStats(orderId, idx, durationDays) {
   const btn = document.getElementById(`ref-${idx}`);
   if (!btn) return;
   btn.classList.add('loading');
@@ -610,6 +609,24 @@ async function refreshStats(orderId, idx) {
         const diff = Math.ceil((new Date(d.expdate) - new Date()) / 86400000);
         daysVal.textContent = diff >= 0 ? `${diff.toLocaleString('fa-IR')} روز` : '⛔ منقضی';
       } catch(e) {}
+    }
+
+    // update renewal eligibility after live stats
+    const renewArea = document.getElementById(`renew-area-${idx}`);
+    if (renewArea) {
+      let daysLeft = null;
+      if (d.expdate && d.expdate !== '—') {
+        try { daysLeft = Math.ceil((new Date(d.expdate) - new Date()) / 86400000); } catch(e) {}
+      }
+      const canRenewTraffic = pct >= 75;
+      const canRenewTime = daysLeft !== null && daysLeft <= Math.floor((durationDays || 30) * 0.25);
+      const canRenew = canRenewTraffic || canRenewTime;
+      if (!canRenew) {
+        const threshold = Math.floor((durationDays || 30) * 0.25);
+        let msg = `باید کمتر از ۲۵٪ حجم باقی بمونه (الان ${100-pct}٪ مونده)`;
+        if (daysLeft !== null) msg += ` یا کمتر از ${threshold} روز (الان ${daysLeft} روز)`;
+        renewArea.innerHTML = `<div class="renew-blocked"><span>🔒</span><span>⏳ تمدید هنوز ممکن نیست — ${msg}</span></div>`;
+      }
     }
 
     btn.textContent = '✅ آمار بروز شد';

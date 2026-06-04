@@ -499,8 +499,9 @@ async def handle_portal_data(request: web.Request) -> web.Response:
             "remaining_mb":    total_mb,
             "used_pct":        0,
             "created_at":      o["created_at"],
-            "can_renew":       can_renew,
-            "renew_msg":       renew_msg,
+            "duration_days":   duration_days,
+            "can_renew":       True,
+            "renew_msg":       "",
         }
 
     subs = [s for s in (_enrich(o) for o in orders) if s]
