@@ -682,8 +682,9 @@ async def handle_portal_order_stats(request: web.Request) -> web.Response:
     order_id = int(request.match_info.get("order_id", 0))
     with closing(get_conn()) as conn:
         o = conn.execute(
-            """SELECT o.xpanel_username, o.server_id, o.traffic_amount, o.traffic_unit
-               FROM orders o WHERE o.id=? AND o.customer_id=? AND o.status='active'""",
+            """SELECT o.xpanel_username, o.server_id, p.traffic_amount, p.traffic_unit
+               FROM orders o JOIN packages p ON p.id=o.package_id
+               WHERE o.id=? AND o.customer_id=? AND o.status='active'""",
             (order_id, customer["id"]),
         ).fetchone()
     if not o:
