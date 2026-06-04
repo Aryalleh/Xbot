@@ -256,6 +256,12 @@ def init_db() -> None:
             except Exception:
                 pass
 
+        # ── Backfill portal_token for existing customers ───────────────────────
+        nulls = cur.execute("SELECT id FROM customers WHERE portal_token IS NULL").fetchall()
+        for row in nulls:
+            cur.execute("UPDATE customers SET portal_token=? WHERE id=?",
+                        (secrets.token_hex(16), row["id"]))
+
         # ── Seed TOS ──────────────────────────────────────────────────────────
         if not cur.execute("SELECT id FROM tos_versions LIMIT 1").fetchone():
             cur.execute(
